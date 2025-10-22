@@ -1,23 +1,49 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	interface Props {
+		visible?: boolean;
+		fraction?: number;
+		dir?: string;
+		title?: string;
+		sectionFractions?: number[];
+		ongoLeft?: () => void;
+		ongoRight?: () => void;
+		onseek?: (event: CustomEvent<{ fraction: number }>) => void;
+	}
 
-	export let visible = false;
-	export let fraction = 0;
-	export let dir = 'ltr';
-	export let title = '';
-	export let sectionFractions: number[] = [];
-
-	const dispatch = createEventDispatcher();
+	let {
+		visible = false,
+		fraction = 0,
+		dir = 'ltr',
+		title = '',
+		sectionFractions = [],
+		ongoLeft,
+		ongoRight,
+		onseek
+	}: Props = $props();
 
 	function handleInput(e: Event) {
 		const target = e.target as HTMLInputElement;
-		dispatch('seek', { fraction: parseFloat(target.value) });
+		onseek?.(new CustomEvent('seek', { detail: { fraction: parseFloat(target.value) } }));
 	}
 </script>
 
-<div class="toolbar nav-bar" style:visibility={visible ? 'visible' : 'hidden'}>
-	<button id="left-button" aria-label="Go left" on:click={() => dispatch('go-left')}>
-		<svg class="icon" width="24" height="24" aria-hidden="true">
+<div
+	class="fixed bottom-0 z-10 flex items-center justify-between w-full h-12 px-1.5 transition-opacity duration-250 {visible
+		? 'visible'
+		: 'invisible'}"
+>
+	<button
+		id="left-button"
+		aria-label="Go left"
+		onclick={() => ongoLeft?.()}
+		class="p-0.5 rounded-md bg-transparent border-0 text-gray-500 hover:bg-black/10 hover:text-current"
+	>
+		<svg
+			class="block fill-none stroke-current stroke-2"
+			width="24"
+			height="24"
+			aria-hidden="true"
+		>
 			<path d="M 15 6 L 9 12 L 15 18" />
 		</svg>
 	</button>
@@ -31,56 +57,27 @@
 		{dir}
 		value={fraction}
 		{title}
-		style:visibility={visible ? 'visible' : 'hidden'}
-		on:input={handleInput}
+		oninput={handleInput}
+		class="flex-grow mx-3 {visible ? 'visible' : 'invisible'}"
 	/>
 	<datalist id="tick-marks">
-		{#each sectionFractions as fraction}
-			<option value={fraction} />
+		{#each sectionFractions as frac}
+			<option value={frac} />
 		{/each}
 	</datalist>
-	<button id="right-button" aria-label="Go right" on:click={() => dispatch('go-right')}>
-		<svg class="icon" width="24" height="24" aria-hidden="true">
+	<button
+		id="right-button"
+		aria-label="Go right"
+		onclick={() => ongoRight?.()}
+		class="p-0.5 rounded-md bg-transparent border-0 text-gray-500 hover:bg-black/10 hover:text-current"
+	>
+		<svg
+			class="block fill-none stroke-current stroke-2"
+			width="24"
+			height="24"
+			aria-hidden="true"
+		>
 			<path d="M 9 6 L 15 12 L 9 18" />
 		</svg>
 	</button>
 </div>
-
-<style>
-	.toolbar {
-		box-sizing: border-box;
-		position: absolute;
-		z-index: 1;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		width: 100%;
-		height: 48px;
-		padding: 6px;
-		transition: opacity 250ms ease;
-	}
-	.toolbar button {
-		padding: 3px;
-		border-radius: 6px;
-		background: none;
-		border: 0;
-		color: GrayText;
-	}
-	.toolbar button:hover {
-		background: rgba(0, 0, 0, 0.1);
-		color: currentcolor;
-	}
-	.nav-bar {
-		bottom: 0;
-	}
-	#progress-slider {
-		flex-grow: 1;
-		margin: 0 12px;
-	}
-	.icon {
-		display: block;
-		fill: none;
-		stroke: currentcolor;
-		stroke-width: 2px;
-	}
-</style>
