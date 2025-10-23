@@ -2,7 +2,7 @@
 	interface Props {
 		visible?: boolean;
 		fraction?: number;
-		dir?: string;
+		dir?: 'ltr' | 'rtl' | 'auto';
 		title?: string;
 		sectionFractions?: number[];
 		ongoLeft?: () => void;
@@ -36,7 +36,7 @@
 		id="left-button"
 		aria-label="Go left"
 		onclick={() => ongoLeft?.()}
-		class="p-0.5 rounded-md bg-transparent border-0 text-gray-500 hover:bg-black/10 hover:text-current"
+		class="p-0.5 rounded-md bg-transparent border-0 text-gray-500 hover:bg-black/10 hover:text-current flex-shrink-0"
 	>
 		<svg
 			class="block fill-none stroke-current stroke-2"
@@ -62,14 +62,14 @@
 	/>
 	<datalist id="tick-marks">
 		{#each sectionFractions as frac}
-			<option value={frac} />
+			<option value={frac}></option>
 		{/each}
 	</datalist>
 	<button
 		id="right-button"
 		aria-label="Go right"
 		onclick={() => ongoRight?.()}
-		class="p-0.5 rounded-md bg-transparent border-0 text-gray-500 hover:bg-black/10 hover:text-current"
+		class="p-0.5 rounded-md bg-transparent border-0 text-gray-500 hover:bg-black/10 hover:text-current flex-shrink-0"
 	>
 		<svg
 			class="block fill-none stroke-current stroke-2"
