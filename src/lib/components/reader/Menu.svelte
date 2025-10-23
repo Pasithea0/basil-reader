@@ -43,28 +43,36 @@
 			? 'visible'
 			: 'invisible'}"
 	>
-		<li class="px-3 py-1.5 pl-6 rounded-md">
+		<li class="px-3 py-1.5 rounded-md">
 			<strong>Layout</strong>
 		</li>
 		<li
 			onclick={() => selectLayout('paginated')}
-			class="px-3 py-1.5 pl-6 rounded-md hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer {selectedLayout ===
-			'paginated'
-				? 'bg-[center_left] bg-no-repeat bg-[url(\'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%223%22%2F%3E%3C%2Fsvg%3E\')]'
-				: ''}"
+			class="px-3 py-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer flex items-center gap-2"
 			aria-checked={selectedLayout === 'paginated'}
 		>
-			Paginated
+			<span class="w-4 h-4 flex items-center justify-center">
+				{#if selectedLayout === 'paginated'}
+					<svg width="16" height="16" viewBox="0 0 16 16" class="fill-current">
+						<circle cx="8" cy="8" r="3" />
+					</svg>
+				{/if}
+			</span>
+			<span>Paginated</span>
 		</li>
 		<li
 			onclick={() => selectLayout('scrolled')}
-			class="px-3 py-1.5 pl-6 rounded-md hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer {selectedLayout ===
-			'scrolled'
-				? 'bg-[center_left] bg-no-repeat bg-[url(\'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%223%22%2F%3E%3C%2Fsvg%3E\')]'
-				: ''}"
+			class="px-3 py-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer flex items-center gap-2"
 			aria-checked={selectedLayout === 'scrolled'}
 		>
-			Scrolled
+			<span class="w-4 h-4 flex items-center justify-center">
+				{#if selectedLayout === 'scrolled'}
+					<svg width="16" height="16" viewBox="0 0 16 16" class="fill-current">
+						<circle cx="8" cy="8" r="3" />
+					</svg>
+				{/if}
+			</span>
+			<span>Scrolled</span>
 		</li>
 	</ul>
 </div>
