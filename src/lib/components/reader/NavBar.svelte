@@ -28,7 +28,7 @@
 </script>
 
 <div
-	class="fixed bottom-0 z-10 flex items-center justify-between w-full h-12 px-1.5 transition-opacity duration-250 {visible
+	class="fixed bottom-0 z-10 flex h-12 w-full items-center justify-between px-1.5 transition-opacity duration-250 {visible
 		? 'visible'
 		: 'invisible'}"
 >
@@ -36,14 +36,9 @@
 		id="left-button"
 		aria-label="Go left"
 		onclick={() => ongoLeft?.()}
-		class="p-0.5 rounded-md bg-transparent border-0 text-gray-500 hover:bg-black/10 hover:text-current flex-shrink-0"
+		class="flex-shrink-0 rounded-md border-0 bg-transparent p-0.5 text-gray-500 hover:bg-black/10 hover:text-current"
 	>
-		<svg
-			class="block fill-none stroke-current stroke-2"
-			width="24"
-			height="24"
-			aria-hidden="true"
-		>
+		<svg class="block fill-none stroke-current stroke-2" width="24" height="24" aria-hidden="true">
 			<path d="M 15 6 L 9 12 L 15 18" />
 		</svg>
 	</button>
@@ -58,7 +53,7 @@
 		value={fraction}
 		{title}
 		oninput={handleInput}
-		class="flex-grow mx-3 {visible ? 'visible' : 'invisible'}"
+		class="mx-3 flex-grow {visible ? 'visible' : 'invisible'}"
 	/>
 	<datalist id="tick-marks">
 		{#each sectionFractions as frac}
@@ -69,14 +64,9 @@
 		id="right-button"
 		aria-label="Go right"
 		onclick={() => ongoRight?.()}
-		class="p-0.5 rounded-md bg-transparent border-0 text-gray-500 hover:bg-black/10 hover:text-current flex-shrink-0"
+		class="flex-shrink-0 rounded-md border-0 bg-transparent p-0.5 text-gray-500 hover:bg-black/10 hover:text-current"
 	>
-		<svg
-			class="block fill-none stroke-current stroke-2"
-			width="24"
-			height="24"
-			aria-hidden="true"
-		>
+		<svg class="block fill-none stroke-current stroke-2" width="24" height="24" aria-hidden="true">
 			<path d="M 9 6 L 15 12 L 9 18" />
 		</svg>
 	</button>

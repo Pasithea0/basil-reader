@@ -156,7 +156,7 @@
 
 	function handleRelocate({ detail }: any) {
 		const { fraction: newFraction, location, tocItem, pageItem } = detail;
-		
+
 		// Update fraction - this will update the slider position
 		fraction = newFraction;
 
@@ -198,7 +198,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="relative w-full h-screen">
+<div class="relative h-screen w-full">
 	{#if showDropTarget}
 		<DropTarget onopen={(e) => openBook(e.detail.file)} />
 	{/if}
@@ -222,5 +222,5 @@
 		<TOCView {toc} {currentHref} onnavigate={handleTOCNavigate} />
 	</SideBar>
 
-	<div class="w-full h-full" bind:this={viewContainer}></div>
+	<div class="h-full w-full" bind:this={viewContainer}></div>
 </div>
