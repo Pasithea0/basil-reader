@@ -6,3 +6,4 @@ export { default as Menu } from './Menu.svelte';
 export { default as TOCView } from './TOCView.svelte';
 export { default as Library } from './Library.svelte';
 export { default as BookItem } from './BookItem.svelte';
+export { default as Spinner } from './Spinner.svelte';

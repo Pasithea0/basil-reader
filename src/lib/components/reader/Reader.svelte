@@ -6,6 +6,7 @@
 	import SideBar from './SideBar.svelte';
 	import Menu from './Menu.svelte';
 	import TOCView from './TOCView.svelte';
+	import Spinner from './Spinner.svelte';
 	import { percentFormat } from '$lib/utils/format';
 	import { getCSS } from '$lib/utils/css';
 	import { addBookToLibrary, getBookById, getStorageInfo, formatBytes, type StoredBook } from '$lib/utils/library';
@@ -56,6 +57,7 @@
 	// Loading state
 	let viewReady = $state(false);
 	let loadedFileId = $state<string | null>(null);
+	let isLoadingBook = $state(false);
 
 	// Expose bookTitle as a prop so parent can access it
 	$effect(() => {
@@ -66,7 +68,6 @@
 
 	// Initialize foliate-js view component
 	onMount(async () => {
-		// @ts-expect-error - Runtime import from external JS library
 		await import('$lib/foliate-js/view.js');
 		viewReady = true;
 	});
@@ -80,9 +81,12 @@
 			const fileId = `file-${initialFile.name}-${initialFile.size}`;
 			if (loadedFileId !== fileId) {
 				loadedFileId = fileId;
+				isLoadingBook = true;
 				openBook(initialFile, false).catch((e) => {
 					console.error('Failed to load initial file:', e);
 					loadedFileId = null;
+				}).finally(() => {
+					isLoadingBook = false;
 				});
 			}
 		}
@@ -91,6 +95,7 @@
 			const bookId = `book-${initialBook.id}`;
 			if (loadedFileId !== bookId) {
 				loadedFileId = bookId;
+				isLoadingBook = true;
 				getBookById(initialBook.id).then((file) => {
 					if (file) {
 						return openBook(file, true);
@@ -100,6 +105,8 @@
 				}).catch((e) => {
 					console.error('Failed to load initial book:', e);
 					loadedFileId = null;
+				}).finally(() => {
+					isLoadingBook = false;
 				});
 			}
 		}
@@ -280,6 +287,13 @@
 	<SideBar bind:show={showSideBar} title={bookTitle} author={bookAuthor} coverSrc={bookCover}>
 		<TOCView {toc} {currentHref} onnavigate={handleTOCNavigate} />
 	</SideBar>
+
+	<!-- Loading overlay -->
+	{#if isLoadingBook}
+		<div class="absolute inset-0 z-50 flex items-center justify-center bg-[Canvas]/80 backdrop-blur-sm">
+			<Spinner size="lg" text="Loading book..." />
+		</div>
+	{/if}
 
 	<div class="w-full h-full" bind:this={viewContainer}></div>
 </div>
