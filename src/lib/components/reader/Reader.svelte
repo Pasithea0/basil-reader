@@ -18,6 +18,7 @@ import { getBookById, type StoredBook } from '$lib/utils/library';
 	} from '$lib/utils/bookLoader';
     import type { FoliateView } from '$lib/types/foliate';
     import { getBookProgress, saveBookProgress } from '$lib/utils/library';
+    import { toEPUBCFI } from '$lib/foliate-js/epubcfi.js';
 
 	interface Props {
 		onTitleChange?: string;
@@ -144,15 +145,17 @@ import { getBookById, type StoredBook } from '$lib/utils/library';
 			bookDir = metadata.dir;
 			toc = metadata.toc || [];
 
-			// Set cover if available
-			if (metadata.cover) {
-				bookCover = URL.createObjectURL(metadata.cover);
-			}
+            // Set cover if available (revoke previous before replacing)
+            if (metadata.cover) {
+                if (bookCover) {
+                    try { URL.revokeObjectURL(bookCover); } catch {}
+                }
+                bookCover = URL.createObjectURL(metadata.cover);
+            }
 
 			// Apply styles
-			view.renderer.setStyles?.(getCSS(style));
-			view.renderer.setAttribute('flow', selectedLayout);
-			view.renderer.next();
+            view.renderer.setStyles?.(getCSS(style));
+            view.renderer.setAttribute('flow', selectedLayout);
 
             // Get section fractions for navigation
             sectionFractions = Array.from(view.getSectionFractions());
@@ -162,7 +165,9 @@ import { getBookById, type StoredBook } from '$lib/utils/library';
                 try {
                     const progress = await getBookProgress(initialBook.id);
                     if (progress) {
-                        if (progress.href) {
+                        if (progress.cfi) {
+                            await view.goTo(progress.cfi).catch((e: Error) => console.error(e));
+                        } else if (progress.href) {
                             await view.goTo(progress.href).catch((e: Error) => console.error(e));
                         } else if (typeof progress.fraction === 'number') {
                             const f = Math.min(1, Math.max(0, progress.fraction));
@@ -209,12 +214,13 @@ import { getBookById, type StoredBook } from '$lib/utils/library';
     function handleRelocate({
 		detail
 	}: CustomEvent<{
+		range: Range;
 		fraction: number;
-        location: { current: number; total?: number };
+		location: { current: number; total?: number };
 		tocItem?: { href?: string };
 		pageItem?: { label: string };
 	}>) {
-		const { fraction: newFraction, location, tocItem, pageItem } = detail;
+		const { range, fraction: newFraction, location, tocItem, pageItem } = detail;
 
 		// Update fraction - this will update the slider position
 		fraction = newFraction;
@@ -232,14 +238,19 @@ import { getBookById, type StoredBook } from '$lib/utils/library';
             currentHref = tocItem.href;
         }
 
-        // Persist progress for this book
+		// Persist progress for this book
         if (initialBook) {
             // Save minimally on each relocate; storage util deduplicates unchanged state
-            void saveBookProgress(initialBook.id, {
+			let cfi: string | undefined = undefined;
+			try {
+				cfi = toEPUBCFI(range);
+			} catch {}
+			void saveBookProgress(initialBook.id, {
                 page: currentPage || undefined,
                 totalPages: totalPages || undefined,
                 fraction: newFraction,
                 href: currentHref || undefined,
+				cfi,
                 updatedAt: Date.now()
             });
         }
@@ -300,14 +311,7 @@ import { getBookById, type StoredBook } from '$lib/utils/library';
             currentDoc?.removeEventListener('keydown', handleKeydown);
             currentDoc = null;
         } catch {}
-        try {
-            const sections = view.book?.sections;
-            if (sections && Array.isArray(sections)) {
-                for (const s of sections) {
-                    try { s.unload?.(); } catch {}
-                }
-            }
-        } catch {}
+        // Do not manually call section unload here; foliate handles lifecycle after removal
         try {
             view.remove();
         } catch {}

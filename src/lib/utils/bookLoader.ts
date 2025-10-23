@@ -78,13 +78,15 @@ export async function extractBookMetadata(view: FoliateView): Promise<BookMetada
  */
 export function setupErrorHandling(view: FoliateView): () => void {
     const { book } = view;
+    // Only log transform errors, do not mutate payload to avoid breaking renderer
     const handler = (({
         detail
-    }: CustomEvent<{ data: Promise<unknown>; name: string }>) => {
-        detail.data = Promise.resolve(detail.data).catch((e: Error) => {
-            console.error(new Error(`Failed to load ${detail.name}`, { cause: e }));
-            return '';
-        });
+    }: CustomEvent<{ data: Promise<unknown> | unknown; name: string }>) => {
+        if (detail && detail.data && typeof (detail.data as any)?.then === 'function') {
+            (detail.data as Promise<unknown>).catch((e: Error) => {
+                console.error(new Error(`Failed to load ${detail.name}`, { cause: e }));
+            });
+        }
     }) as EventListener;
 
     book.transformTarget?.addEventListener('data', handler);
