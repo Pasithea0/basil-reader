@@ -258,7 +258,7 @@
 						<span>Choose File</span>
 					</button>
 					<p class="text-xs text-gray-500 dark:text-gray-500">
-						Supported formats: EPUB, MOBI, AZW, AZW3, FB2, CBZ, PDF
+						Supported formats: EPUB, MOBI, AZW, AZW3, FB2, CBZ, (PDFs are experimental)
 					</p>
 				</div>
 			</div>
