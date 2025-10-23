@@ -55,6 +55,7 @@ export async function getLibrary(): Promise<StoredBook[]> {
 					coverUrl = URL.createObjectURL(blob);
 				}
 			} catch (e) {
+				console.log('No cover found for book:', bookData.title, e);
 				// Silently fail - book will show without cover
 			}
 

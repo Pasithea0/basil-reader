@@ -162,6 +162,7 @@ export async function getStorageInfo(): Promise<StorageInfo> {
 			usedPercent: 0
 		};
 	} catch (e) {
+		console.error('Failed to get storage info:', e);
 		return {
 			used: 0,
 			total: 50 * 1024 * 1024 * 1024,
