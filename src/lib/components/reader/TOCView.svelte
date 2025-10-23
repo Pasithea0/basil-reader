@@ -84,7 +84,7 @@
 {/snippet}
 
 <div class="m-0 list-none p-0">
-	{#each toc as item}
+	{#each toc as item, i (`root-${item.label}-${i}`)}
 		{@render tocItem(item, 0, 'root')}
 	{/each}
 </div>

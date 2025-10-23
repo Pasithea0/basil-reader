@@ -60,9 +60,14 @@
 		showDropTarget = false;
 
 		// Create foliate-view element
+		// We need to use DOM manipulation here because foliate-view is a custom element
+		// from an external library (foliate-js) that must be created imperatively.
+		// Svelte can't manage this element because it's defined in vanilla JS.
+		/* eslint-disable svelte/no-dom-manipulating */
 		const viewElement = document.createElement('foliate-view') as unknown as FoliateView;
 		view = viewElement;
 		viewContainer.appendChild(viewElement);
+		/* eslint-enable svelte/no-dom-manipulating */
 		console.log('Created foliate-view element:', view);
 
 		await view.open(file);
