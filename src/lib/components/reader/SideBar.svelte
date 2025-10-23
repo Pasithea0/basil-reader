@@ -5,7 +5,7 @@
 		author?: string;
 		coverSrc?: string;
 		onclose?: () => void;
-		children?: any;
+		children?: import('svelte').Snippet;
 	}
 
 	let {

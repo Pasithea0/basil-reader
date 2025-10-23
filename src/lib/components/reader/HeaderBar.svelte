@@ -2,7 +2,7 @@
 	interface Props {
 		visible?: boolean;
 		ontoggleSidebar?: () => void;
-		children?: any;
+		children?: import('svelte').Snippet;
 	}
 
 	let { visible = false, ontoggleSidebar, children }: Props = $props();

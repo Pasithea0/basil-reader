@@ -1,13 +1,21 @@
 <script lang="ts">
+	import { SvelteSet } from 'svelte/reactivity';
+
+	interface TOCItem {
+		label: string;
+		href?: string;
+		subitems?: TOCItem[];
+	}
+
 	interface Props {
-		toc?: any[];
+		toc?: TOCItem[];
 		currentHref?: string;
 		onnavigate?: (event: CustomEvent<{ href: string }>) => void;
 	}
 
 	let { toc = [], currentHref = '', onnavigate }: Props = $props();
 
-	let expandedItems = $state(new Set<string>());
+	let expandedItems = new SvelteSet<string>();
 
 	function toggleExpand(id: string) {
 		if (expandedItems.has(id)) {
@@ -15,7 +23,6 @@
 		} else {
 			expandedItems.add(id);
 		}
-		expandedItems = new Set(expandedItems);
 	}
 
 	function handleItemClick(href: string) {
@@ -23,7 +30,7 @@
 	}
 </script>
 
-{#snippet tocItem(item: any, depth: number = 0, parentId: string = '')}
+{#snippet tocItem(item: TOCItem, depth: number = 0, parentId: string = '')}
 	{@const itemId = `${parentId}-${item.label}`}
 	{@const hasSubitems = item.subitems && item.subitems.length > 0}
 	{@const isExpanded = expandedItems.has(itemId)}
@@ -69,8 +76,8 @@
 		{/if}
 	</div>
 
-	{#if hasSubitems && isExpanded}
-		{#each item.subitems as subitem}
+	{#if hasSubitems && isExpanded && item.subitems}
+		{#each item.subitems as subitem, j (itemId + '-' + subitem.label + j)}
 			{@render tocItem(subitem, depth + 1, itemId)}
 		{/each}
 	{/if}
