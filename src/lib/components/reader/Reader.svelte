@@ -1,17 +1,34 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { SvelteMap } from 'svelte/reactivity';
 	import DropTarget from './DropTarget.svelte';
 	import HeaderBar from './HeaderBar.svelte';
 	import NavBar from './NavBar.svelte';
 	import SideBar from './SideBar.svelte';
 	import Menu from './Menu.svelte';
 	import TOCView from './TOCView.svelte';
-	import { formatLanguageMap, formatContributor, percentFormat } from '$lib/utils/format';
-	import { getCSS } from '$lib/utils/css';
 	import type { FoliateView } from '$lib/types/foliate';
-	import { addBookToLibrary, getBookById, getStorageInfo, formatBytes, type StoredBook } from '$lib/utils/library';
+	import {
+		addBookToLibrary,
+		getBookById,
+		getStorageInfo,
+		formatBytes,
+		type StoredBook
+	} from '$lib/utils/bookManager';
+	import {
+		extractBookMetadata,
+		setupFoliateView,
+		handleRelocateEvent,
+		handleKeyboardNavigation,
+		extractTOC,
+		getSectionFractions,
+		DEFAULT_READER_STYLE,
+		type TOCItem,
+		type ReaderStyle
+	} from '$lib/utils/readerState';
+	import { loadCalibreBookmarks } from '$lib/utils/annotations';
+	import { getCSS } from '$lib/utils/css';
 
+	// Props
 	interface Props {
 		onTitleChange?: string;
 		onback?: () => void;
@@ -19,6 +36,9 @@
 		initialFile?: File;
 	}
 
+	let { onTitleChange = $bindable(), onback, initialBook, initialFile }: Props = $props();
+
+	// UI State
 	let showDropTarget = $state(true);
 	let showSideBar = $state(false);
 	let showToolbars = $state(false);
@@ -29,21 +49,7 @@
 	let bookCover = $state('');
 	let bookDir = $state<'ltr' | 'rtl'>('ltr');
 
-	// Expose bookTitle as a prop so parent can access it
-	let { onTitleChange = $bindable(), onback, initialBook, initialFile }: Props = $props();
-	$effect(() => {
-		// Only update title when a book is actually loaded (not the default placeholder)
-		if (bookTitle !== 'Untitled Book') {
-			onTitleChange = bookTitle;
-		}
-	});
-	
-	interface TOCItem {
-		label: string;
-		href?: string;
-		subitems?: TOCItem[];
-	}
-	
+	// Table of Contents
 	let toc: TOCItem[] = $state([]);
 	let currentHref = $state('');
 
@@ -53,22 +59,22 @@
 	let sectionFractions: number[] = $state([]);
 
 	// Reader settings
-	let style = {
-		spacing: 1.4,
-		justify: true,
-		hyphenate: true
-	};
-
+	let style: ReaderStyle = DEFAULT_READER_STYLE;
 	let selectedLayout = $state('paginated');
 
 	// Foliate view reference
 	let viewContainer: HTMLElement;
 	let view: FoliateView | null = null;
-	let annotations = new SvelteMap<number, Array<{ value: string; color?: string; note?: string }>>();
-	let annotationsByValue = new SvelteMap<string, { value: string; color?: string; note?: string }>();
 
 	let viewReady = $state(false);
 	let loadedFileId = $state<string | null>(null);
+
+	// Update parent component title when book is loaded
+	$effect(() => {
+		if (bookTitle !== 'Untitled Book') {
+			onTitleChange = bookTitle;
+		}
+	});
 
 	onMount(async () => {
 		// Import foliate-js view component
@@ -96,22 +102,26 @@
 			const bookId = `book-${initialBook.id}`;
 			if (loadedFileId !== bookId) {
 				loadedFileId = bookId;
-				getBookById(initialBook.id).then((file) => {
-					if (file) {
-						return openBook(file, true); // Don't save again since it's already in library
-					} else {
-						throw new Error('Book not found in library');
-					}
-				}).catch((e) => {
-					console.error('Failed to load initial book:', e);
-					loadedFileId = null;
-				});
+				getBookById(initialBook.id)
+					.then((file) => {
+						if (file) {
+							return openBook(file, true); // Don't save again since it's already in library
+						} else {
+							throw new Error('Book not found in library');
+						}
+					})
+					.catch((e) => {
+						console.error('Failed to load initial book:', e);
+						loadedFileId = null;
+					});
 			}
 		}
 	});
 
+	/**
+	 * Opens a book file in the reader
+	 */
 	async function openBook(file: File | FileSystemDirectoryHandle, skipSave = false) {
-		console.log('openBook called with:', file);
 		showDropTarget = false;
 
 		// Create foliate-view element
@@ -123,7 +133,6 @@
 		view = viewElement;
 		viewContainer.appendChild(viewElement);
 		/* eslint-enable svelte/no-dom-manipulating */
-		console.log('Created foliate-view element:', view);
 
 		await view.open(file);
 
@@ -134,120 +143,94 @@
 		const { book } = view;
 
 		// Handle transform errors
-		book.transformTarget?.addEventListener('data', (({ detail }: CustomEvent<{ data: Promise<unknown>; name: string }>) => {
-			detail.data = Promise.resolve(detail.data).catch((e: Error) => {
-				console.error(new Error(`Failed to load ${detail.name}`, { cause: e }));
-				return '';
-			});
-		}) as EventListener);
+		book.transformTarget?.addEventListener(
+			'data',
+			(({ detail }: CustomEvent<{ data: Promise<unknown>; name: string }>) => {
+				detail.data = Promise.resolve(detail.data).catch((e: Error) => {
+					console.error(new Error(`Failed to load ${detail.name}`, { cause: e }));
+					return '';
+				});
+			}) as EventListener
+		);
 
-		// Apply styles
-		view.renderer.setStyles?.(getCSS(style));
-		view.renderer.setAttribute('flow', selectedLayout);
-		view.renderer.next();
+		// Apply initial styles and layout
+		setupFoliateView(view, style, selectedLayout);
 
 		// Show toolbars
 		showToolbars = true;
 
-		// Setup book metadata
-		bookTitle = formatLanguageMap(book.metadata?.title) || 'Untitled Book';
-		bookAuthor = book.metadata?.author ? formatContributor(book.metadata.author) : '';
-		bookDir = book.dir as 'ltr' | 'rtl';
-
-		// Get cover
-		let coverBlob: Blob | undefined;
-		try {
-			const cover = await book.getCover?.();
-			if (cover) {
-				coverBlob = cover;
-				bookCover = URL.createObjectURL(cover);
-			}
-		} catch (e) {
-			console.error('Failed to load cover:', e);
-		}
+		// Extract and set book metadata
+		const metadata = await extractBookMetadata(book);
+		bookTitle = metadata.title;
+		bookAuthor = metadata.author;
+		bookCover = metadata.cover;
+		bookDir = metadata.dir;
 
 		// Save to library if it's a new upload
 		if (!skipSave && file instanceof File) {
-			try {
-				await addBookToLibrary(file, {
-					title: bookTitle,
-					author: bookAuthor,
-					cover: coverBlob
-				});
-				console.log('Book saved to library');
-			} catch (e) {
-				console.error('Failed to save book to library:', e);
-				const storageInfo = await getStorageInfo();
-				const errorMsg = (e as Error).message;
-				
-				// Show a helpful error message
-				alert(
-					`⚠️ Failed to save book to library\n\n` +
-					`${errorMsg}\n\n` +
-					`📊 Storage Status:\n` +
-					`• Used: ${formatBytes(storageInfo.used)} / ${formatBytes(storageInfo.total)}\n` +
-					`• Available: ${formatBytes(storageInfo.available)}\n` +
-					`• Usage: ${storageInfo.usedPercent.toFixed(1)}%\n\n` +
-					`💡 Tips:\n` +
-					`• Remove some books from your library to free up space\n` +
-					`• The book is still open and readable, just not saved\n` +
-					`• You can use the back button to return to your library`
-				);
-			}
+			await saveBookToLibrary(file, metadata);
 		}
 
 		// Setup TOC
-		if (book.toc) {
-			toc = book.toc as TOCItem[];
-		}
+		toc = extractTOC(book);
 
 		// Get section fractions
-		sectionFractions = Array.from(view.getSectionFractions());
+		sectionFractions = getSectionFractions(view);
 
 		// Load Calibre bookmarks if available
+		await loadCalibreBookmarks(book, view);
+	}
+
+	/**
+	 * Saves a book to the library with error handling
+	 */
+	async function saveBookToLibrary(
+		file: File,
+		metadata: { title: string; author: string; cover: string }
+	) {
 		try {
-			const bookmarks = await book.getCalibreBookmarks?.();
-			if (bookmarks) {
-				const { fromCalibreHighlight } = await import('$lib/foliate-js/epubcfi.js');
-				const { Overlayer } = await import('$lib/foliate-js/overlayer.js');
-
-				for (const obj of bookmarks) {
-					if (obj.type === 'highlight') {
-						const value = fromCalibreHighlight(obj) as string;
-						const color = obj.style?.which;
-						const note = obj.notes;
-						const annotation = { value, color, note };
-						const list = annotations.get(obj.spine_index);
-						if (list) list.push(annotation);
-						else annotations.set(obj.spine_index, [annotation]);
-						annotationsByValue.set(value, annotation);
-					}
+			// Convert cover URL to Blob if available
+			let coverBlob: Blob | undefined;
+			if (metadata.cover) {
+				try {
+					const response = await fetch(metadata.cover);
+					coverBlob = await response.blob();
+				} catch (e) {
+					console.error('Failed to fetch cover blob:', e);
 				}
-
-				view.addEventListener('create-overlay', ((e: CustomEvent<{ index: number }>) => {
-					const { index } = e.detail;
-					const list = annotations.get(index);
-					if (list && view) {
-						for (const annotation of list) {
-							view.addAnnotation(annotation);
-						}
-					}
-				}) as EventListener);
-
-				view.addEventListener('draw-annotation', ((e: CustomEvent<{ draw: (fn: (range: Range) => SVGElement, options: Record<string, unknown>) => void; annotation: { color?: string } }>) => {
-					const { draw, annotation } = e.detail;
-					const { color } = annotation;
-					draw(Overlayer.highlight, { color });
-				}) as EventListener);
-
-				view.addEventListener('show-annotation', ((e: CustomEvent<{ value: string }>) => {
-					const annotation = annotationsByValue.get(e.detail.value);
-					if (annotation?.note) alert(annotation.note);
-				}) as EventListener);
 			}
+
+			await addBookToLibrary(file, {
+				title: metadata.title,
+				author: metadata.author,
+				cover: coverBlob
+			});
+			console.log('Book saved to library');
 		} catch (e) {
-			console.error('Failed to load bookmarks:', e);
+			console.error('Failed to save book to library:', e);
+			await showStorageError(e as Error);
 		}
+	}
+
+	/**
+	 * Shows a helpful error message when storage fails
+	 */
+	async function showStorageError(error: Error) {
+		const storageInfo = await getStorageInfo();
+		const errorMsg = error.message;
+
+		alert(
+			`⚠️ Failed to save book to library\n\n` +
+				`${errorMsg}\n\n` +
+				`📊 Storage Status:\n` +
+				`• Used: ${formatBytes(storageInfo.used)} / ${formatBytes(storageInfo.total)}\n` +
+				`• Available: ${formatBytes(storageInfo.available)}\n` +
+				`• Usage: ${storageInfo.usedPercent.toFixed(1)}%\n\n` +
+				`💡 Tips:\n` +
+				`• Remove some books from your library to free up space\n` +
+				`• The book is still open and readable, just not saved\n` +
+				`• You can use the back button to return to your library`
+		);
 	}
 
 	function handleLoad({ detail }: CustomEvent<{ doc: Document }>) {
@@ -255,29 +238,24 @@
 		doc.addEventListener('keydown', handleKeydown);
 	}
 
-	function handleRelocate({ detail }: CustomEvent<{ fraction: number; location: { current: number }; tocItem?: { href?: string }; pageItem?: { label: string } }>) {
-		const { fraction: newFraction, location, tocItem, pageItem } = detail;
-		
-		// Update fraction - this will update the slider position
-		fraction = newFraction;
-
-		// Update title with percentage and location
-		const percent = percentFormat.format(newFraction);
-		const loc = pageItem ? `Page ${pageItem.label}` : `Loc ${location.current}`;
-		progressTitle = `${percent} · ${loc}`;
-
-		if (tocItem?.href) {
-			currentHref = tocItem.href;
+	function handleRelocate(
+		event: CustomEvent<{
+			fraction: number;
+			location: { current: number };
+			tocItem?: { href?: string };
+			pageItem?: { label: string };
+		}>
+	) {
+		const result = handleRelocateEvent(event.detail);
+		fraction = result.fraction;
+		progressTitle = result.progressTitle;
+		if (result.currentHref) {
+			currentHref = result.currentHref;
 		}
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
-		const k = event.key;
-		if (k === 'ArrowLeft' || k === 'h') {
-			view?.goLeft();
-		} else if (k === 'ArrowRight' || k === 'l') {
-			view?.goRight();
-		}
+		handleKeyboardNavigation(event, view);
 	}
 
 	function handleLayoutChange(event: CustomEvent<{ value: string }>) {

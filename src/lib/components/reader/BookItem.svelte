@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { BookOpen, X } from 'lucide-svelte';
-	import type { StoredBook } from '$lib/utils/library';
-	import { formatBytes } from '$lib/utils/library';
+	import type { StoredBook } from '$lib/utils/bookManager';
+	import { formatBytes } from '$lib/utils/bookManager';
 
 	interface Props {
 		book: StoredBook;

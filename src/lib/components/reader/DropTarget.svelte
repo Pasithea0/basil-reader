@@ -62,7 +62,7 @@
 	type="file"
 	id="file-input"
 	onchange={handleFileInputChange}
-	accept=".epub,.mobi,.azw,.azw3,.fb2,.cbz,.pdf"
+	accept=".epub,.mobi,.azw,.azw3,.fb2,.cbz"
 	hidden
 />
 <div

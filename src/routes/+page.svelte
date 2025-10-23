@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Library from '$lib/components/reader/Library.svelte';
 	import Reader from '$lib/components/reader/Reader.svelte';
-	import type { StoredBook } from '$lib/utils/library';
+	import type { StoredBook } from '$lib/utils/bookManager';
 
 	let bookTitle = $state('Basil Reader');
 	let currentView = $state<'library' | 'reader'>('library');
