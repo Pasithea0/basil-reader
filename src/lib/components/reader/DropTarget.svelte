@@ -50,6 +50,9 @@
 	hidden
 />
 <div
+	role="button"
+	tabindex="0"
+	aria-label="Drop zone for ebook files"
 	class="flex h-screen items-center justify-center text-center"
 	ondrop={handleDrop}
 	ondragover={handleDragOver}

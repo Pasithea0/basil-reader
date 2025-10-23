@@ -17,13 +17,6 @@
 	function toggleMenu() {
 		show = !show;
 	}
-
-	function handleKeyDown(e: KeyboardEvent, value: string) {
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			selectLayout(value);
-		}
-	}
 </script>
 
 <div class="relative">
@@ -45,48 +38,46 @@
 			<circle cx="12" cy="12" r="3" />
 		</svg>
 	</button>
-	<ul
+	<div
 		role="menu"
-		class="absolute right-0 bg-[Canvas] text-[CanvasText] rounded-md shadow-[0_0_0_1px_rgba(0,0,0,0.2),0_0_16px_rgba(0,0,0,0.1)] p-1.5 cursor-default list-none m-0 {show
+		class="absolute right-0 bg-[Canvas] text-[CanvasText] rounded-md shadow-[0_0_0_1px_rgba(0,0,0,0.2),0_0_16px_rgba(0,0,0,0.1)] p-1.5 cursor-default {show
 			? 'visible'
 			: 'invisible'}"
 	>
-		<li role="presentation" class="px-3 py-1.5 rounded-md">
+		<div class="px-3 py-1.5 rounded-md">
 			<strong>Layout</strong>
-		</li>
-		<li role="menuitemradio" aria-checked={selectedLayout === 'paginated'}>
-			<button
-				type="button"
-				onclick={() => selectLayout('paginated')}
-				onkeydown={(e) => handleKeyDown(e, 'paginated')}
-				class="w-full text-left px-3 py-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer flex items-center gap-2 bg-transparent border-0"
-			>
-				<span class="w-4 h-4 flex items-center justify-center">
-					{#if selectedLayout === 'paginated'}
-						<svg width="16" height="16" viewBox="0 0 16 16" class="fill-current">
-							<circle cx="8" cy="8" r="3" />
-						</svg>
-					{/if}
-				</span>
-				<span>Paginated</span>
-			</button>
-		</li>
-		<li role="menuitemradio" aria-checked={selectedLayout === 'scrolled'}>
-			<button
-				type="button"
-				onclick={() => selectLayout('scrolled')}
-				onkeydown={(e) => handleKeyDown(e, 'scrolled')}
-				class="w-full text-left px-3 py-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer flex items-center gap-2 bg-transparent border-0"
-			>
-				<span class="w-4 h-4 flex items-center justify-center">
-					{#if selectedLayout === 'scrolled'}
-						<svg width="16" height="16" viewBox="0 0 16 16" class="fill-current">
-							<circle cx="8" cy="8" r="3" />
-						</svg>
-					{/if}
-				</span>
-				<span>Scrolled</span>
-			</button>
-		</li>
-	</ul>
+		</div>
+		<button
+			type="button"
+			role="menuitemradio"
+			aria-checked={selectedLayout === 'paginated'}
+			onclick={() => selectLayout('paginated')}
+			class="w-full text-left px-3 py-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer flex items-center gap-2 bg-transparent border-0"
+		>
+			<span class="w-4 h-4 flex items-center justify-center">
+				{#if selectedLayout === 'paginated'}
+					<svg width="16" height="16" viewBox="0 0 16 16" class="fill-current">
+						<circle cx="8" cy="8" r="3" />
+					</svg>
+				{/if}
+			</span>
+			<span>Paginated</span>
+		</button>
+		<button
+			type="button"
+			role="menuitemradio"
+			aria-checked={selectedLayout === 'scrolled'}
+			onclick={() => selectLayout('scrolled')}
+			class="w-full text-left px-3 py-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer flex items-center gap-2 bg-transparent border-0"
+		>
+			<span class="w-4 h-4 flex items-center justify-center">
+				{#if selectedLayout === 'scrolled'}
+					<svg width="16" height="16" viewBox="0 0 16 16" class="fill-current">
+						<circle cx="8" cy="8" r="3" />
+					</svg>
+				{/if}
+			</span>
+			<span>Scrolled</span>
+		</button>
+	</div>
 </div>
