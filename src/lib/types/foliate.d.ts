@@ -59,6 +59,8 @@ export interface ResolvedLocation {
 export interface CalibreBookmark {
 	type: 'highlight' | 'bookmark';
 	spine_index: number;
+	start_cfi: string;
+	end_cfi: string;
 	style?: {
 		which: string;
 	};
@@ -67,7 +69,7 @@ export interface CalibreBookmark {
 }
 
 export interface FoliateView extends HTMLElement {
-	open(file: File | string | FoliateBook): Promise<void>;
+	open(file: File | FileSystemDirectoryHandle | string | FoliateBook): Promise<void>;
 	goTo(target: string | ResolvedLocation): Promise<void>;
 	goLeft(): void;
 	goRight(): void;

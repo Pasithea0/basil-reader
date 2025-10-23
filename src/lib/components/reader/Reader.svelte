@@ -19,7 +19,7 @@
 	let bookTitle = $state('Untitled Book');
 	let bookAuthor = $state('');
 	let bookCover = $state('');
-	let bookDir = $state('ltr');
+	let bookDir = $state<'ltr' | 'rtl'>('ltr');
 	
 	interface TOCItem {
 		label: string;
@@ -47,8 +47,8 @@
 	// Foliate view reference
 	let viewContainer: HTMLElement;
 	let view: FoliateView | null = null;
-	let annotations = new SvelteMap<number, Array<{ value: unknown; color?: string; note?: string }>>();
-	let annotationsByValue = new SvelteMap<unknown, { value: unknown; color?: string; note?: string }>();
+	let annotations = new SvelteMap<number, Array<{ value: string; color?: string; note?: string }>>();
+	let annotationsByValue = new SvelteMap<string, { value: string; color?: string; note?: string }>();
 
 	onMount(async () => {
 		// Import foliate-js view component
@@ -96,8 +96,8 @@
 
 		// Setup book metadata
 		bookTitle = formatLanguageMap(book.metadata?.title) || 'Untitled Book';
-		bookAuthor = formatContributor(book.metadata?.author);
-		bookDir = book.dir;
+		bookAuthor = book.metadata?.author ? formatContributor(book.metadata.author) : '';
+		bookDir = book.dir as 'ltr' | 'rtl';
 
 		// Get cover
 		try {
@@ -126,7 +126,7 @@
 
 				for (const obj of bookmarks) {
 					if (obj.type === 'highlight') {
-						const value = fromCalibreHighlight(obj);
+						const value = fromCalibreHighlight(obj) as string;
 						const color = obj.style?.which;
 						const note = obj.notes;
 						const annotation = { value, color, note };
@@ -153,7 +153,7 @@
 					draw(Overlayer.highlight, { color });
 				}) as EventListener);
 
-				view.addEventListener('show-annotation', ((e: CustomEvent<{ value: unknown }>) => {
+				view.addEventListener('show-annotation', ((e: CustomEvent<{ value: string }>) => {
 					const annotation = annotationsByValue.get(e.detail.value);
 					if (annotation?.note) alert(annotation.note);
 				}) as EventListener);
@@ -196,6 +196,8 @@
 	function handleLayoutChange(event: CustomEvent<{ value: string }>) {
 		selectedLayout = event.detail.value;
 		view?.renderer.setAttribute('flow', selectedLayout);
+		// Reapply styles after layout change to prevent formatting issues
+		view?.renderer.setStyles?.(getCSS(style));
 	}
 
 	function handleTOCNavigate(event: CustomEvent<{ href: string }>) {
