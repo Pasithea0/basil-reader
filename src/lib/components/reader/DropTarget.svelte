@@ -1,40 +1,55 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	interface Props {
+		onopen?: (event: CustomEvent<{ file: File }>) => void;
+	}
 
-	const dispatch = createEventDispatcher();
+	let { onopen }: Props = $props();
 
 	function handleDragOver(e: DragEvent) {
 		e.preventDefault();
 	}
 
 	function handleDrop(e: DragEvent) {
+		console.log('Drop event', e);
 		e.preventDefault();
 		const item = Array.from(e.dataTransfer?.items || []).find((item) => item.kind === 'file');
+		console.log('Dropped item:', item);
 		if (item) {
 			const entry = item.webkitGetAsEntry();
 			const file = entry?.isFile ? item.getAsFile() : entry;
+			console.log('File to open:', file);
 			if (file) {
-				dispatch('open', { file });
+				onopen?.(new CustomEvent('open', { detail: { file } }));
 			}
 		}
 	}
 
 	function handleFileButtonClick() {
+		console.log('File button clicked');
 		const input = document.getElementById('file-input') as HTMLInputElement;
+		console.log('Input element:', input);
 		input?.click();
 	}
 
 	function handleFileInputChange(e: Event) {
+		console.log('File input changed', e);
 		const target = e.target as HTMLInputElement;
 		const file = target.files?.[0];
+		console.log('Selected file:', file);
 		if (file) {
-			dispatch('open', { file });
+			onopen?.(new CustomEvent('open', { detail: { file } }));
 		}
 	}
 </script>
 
-<input type="file" id="file-input" on:change={handleFileInputChange} hidden />
-<div class="drop-target filter" on:drop={handleDrop} on:dragover={handleDragOver}>
+<input
+	type="file"
+	id="file-input"
+	onchange={handleFileInputChange}
+	accept=".epub,.mobi,.azw,.azw3,.fb2,.cbz,.pdf"
+	hidden
+/>
+<div class="drop-target filter" ondrop={handleDrop} ondragover={handleDragOver}>
 	<div>
 		<svg class="icon empty-state-icon" width="72" height="72" aria-hidden="true">
 			<path
@@ -42,7 +57,7 @@
 			/>
 		</svg>
 		<h1>Drop a book here!</h1>
-		<p>Or <button id="file-button" on:click={handleFileButtonClick}>choose a file</button> to open it.</p>
+		<p>Or <button id="file-button" onclick={handleFileButtonClick}>choose a file</button> to open it.</p>
 	</div>
 </div>
 

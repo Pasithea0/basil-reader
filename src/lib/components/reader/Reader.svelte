@@ -48,11 +48,13 @@
 	});
 
 	async function openBook(file: File | any) {
+		console.log('openBook called with:', file);
 		showDropTarget = false;
 
 		// Create foliate-view element
 		view = document.createElement('foliate-view');
 		viewContainer.appendChild(view);
+		console.log('Created foliate-view element:', view);
 
 		await view.open(file);
 
@@ -195,7 +197,7 @@
 
 <div class="reader-container">
 	{#if showDropTarget}
-		<DropTarget on:open={(e) => openBook(e.detail.file)} />
+		<DropTarget onopen={(e) => openBook(e.detail.file)} />
 	{/if}
 
 	<HeaderBar visible={showToolbars} on:toggle-sidebar={() => (showSideBar = true)}>
