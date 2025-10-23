@@ -1,5 +1,11 @@
 <script lang="ts">
 	import { BookOpen } from 'lucide-svelte';
+	import {
+		getFileFromDragEvent,
+		validateFile,
+		triggerFileInput,
+		SUPPORTED_BOOK_FORMATS
+	} from '$lib/utils/fileHandler';
 
 	interface Props {
 		onopen?: (event: CustomEvent<{ file: File | FileSystemDirectoryHandle }>) => void;
@@ -7,51 +13,29 @@
 
 	let { onopen }: Props = $props();
 
+	const FILE_INPUT_ID = 'drop-target-file-input';
+
 	function handleDragOver(e: DragEvent) {
 		e.preventDefault();
 	}
 
 	async function handleDrop(e: DragEvent) {
-		console.log('Drop event', e);
 		e.preventDefault();
-		const item = Array.from(e.dataTransfer?.items || []).find((item) => item.kind === 'file');
-		console.log('Dropped item:', item);
-		if (item) {
-			let file: File | FileSystemDirectoryHandle | null = null;
-			
-			if ('getAsFileSystemHandle' in item && typeof item.getAsFileSystemHandle === 'function') {
-				try {
-					const handle = await item.getAsFileSystemHandle();
-					file = handle as File | FileSystemDirectoryHandle;
-				} catch (e) {
-					console.warn('Failed to get FileSystemHandle, falling back to file:', e);
-				}
-			}
-			
-			// Fallback to getAsFile for regular files
-			if (!file) {
-				file = item.getAsFile();
-			}
-			
-			console.log('File to open:', file);
-			if (file) {
-				onopen?.(new CustomEvent('open', { detail: { file } }));
-			}
+		const file = validateFile(await getFileFromDragEvent(e));
+
+		if (file) {
+			onopen?.(new CustomEvent('open', { detail: { file } }));
 		}
 	}
 
 	function handleFileButtonClick() {
-		console.log('File button clicked');
-		const input = document.getElementById('file-input') as HTMLInputElement;
-		console.log('Input element:', input);
-		input?.click();
+		triggerFileInput(FILE_INPUT_ID);
 	}
 
 	function handleFileInputChange(e: Event) {
-		console.log('File input changed', e);
 		const target = e.target as HTMLInputElement;
-		const file = target.files?.[0];
-		console.log('Selected file:', file);
+		const file = validateFile(target.files?.[0] || null);
+
 		if (file) {
 			onopen?.(new CustomEvent('open', { detail: { file } }));
 		}
@@ -60,11 +44,12 @@
 
 <input
 	type="file"
-	id="file-input"
+	id={FILE_INPUT_ID}
 	onchange={handleFileInputChange}
-	accept=".epub,.mobi,.azw,.azw3,.fb2,.cbz,.pdf"
+	accept={SUPPORTED_BOOK_FORMATS}
 	hidden
 />
+
 <div
 	role="region"
 	aria-label="Drop zone for book files"
@@ -79,9 +64,12 @@
 			Or <button
 				id="file-button"
 				onclick={handleFileButtonClick}
-				class="font-inherit cursor-pointer border-0 bg-transparent p-0 underline"
+				class="cursor-pointer border-0 bg-transparent p-0 font-inherit underline"
 				>choose a file</button
 			> to open it.
+		</p>
+		<p class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+			Supported formats: EPUB, MOBI, AZW, AZW3, FB2, CBZ
 		</p>
 	</div>
 </div>
