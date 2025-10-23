@@ -43,6 +43,7 @@
 				onclick={() => toggleExpand(itemId)}
 				class="flex h-6 w-6 flex-shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 opacity-50 transition-transform duration-200 hover:opacity-100"
 				aria-expanded={isExpanded}
+				aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
 			>
 				<svg
 					class="h-6 w-6 fill-current transition-transform duration-200 {isExpanded
