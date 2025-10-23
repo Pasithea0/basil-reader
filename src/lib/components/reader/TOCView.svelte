@@ -47,7 +47,7 @@
 				aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
 			>
 				<ChevronRight
-					class="h-6 w-6 transition-transform duration-200 {isExpanded ? 'rotate-90' : ''}"
+					class="h-4 w-4 transition-transform duration-100 {isExpanded ? 'rotate-90' : ''}"
 					strokeWidth={2}
 				/>
 			</button>

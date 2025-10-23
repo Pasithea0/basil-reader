@@ -2,7 +2,6 @@ export { default as Reader } from './Reader.svelte';
 export { default as HeaderBar } from './HeaderBar.svelte';
 export { default as NavBar } from './NavBar.svelte';
 export { default as SideBar } from './SideBar.svelte';
-export { default as Menu } from './Menu.svelte';
 export { default as TOCView } from './TOCView.svelte';
 export { default as Library } from './Library.svelte';
 export { default as BookItem } from './BookItem.svelte';

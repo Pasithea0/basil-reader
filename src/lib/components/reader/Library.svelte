@@ -178,7 +178,7 @@
 		<div
 			class="fixed inset-0 z-50 flex items-center justify-center bg-[Canvas]/80 backdrop-blur-sm"
 		>
-			<Spinner size="lg" text="Importing {importingFileName}..." />
+			<Spinner size="lg" text="Importing {importingFileName.substring(0, 20)}..." />
 		</div>
 	{/if}
 
@@ -189,7 +189,7 @@
 			<div class="flex items-center gap-2">
 				<button
 					onclick={handleClearLibrary}
-					class="rounded-md border-0 bg-transparent p-2 text-gray-500 transition-colors hover:bg-black/10 hover:text-current disabled:cursor-not-allowed disabled:opacity-30"
+					class="rounded-md border-0 bg-transparent p-2 text-gray-500 transition-colors duration-200 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
 					disabled={library.length === 0}
 					aria-label="Clear all books"
 				>
@@ -197,7 +197,7 @@
 				</button>
 				<button
 					onclick={handleAddBookClick}
-					class="flex items-center gap-2 rounded-lg border-0 bg-blue-500 px-4 py-2 font-semibold text-white shadow-md transition-colors hover:bg-blue-600"
+					class="flex items-center gap-2 rounded-lg border-0 bg-blue-600 px-4 py-2 font-semibold text-white shadow-md transition-colors hover:bg-blue-500"
 					aria-label="Upload book"
 				>
 					<Plus class="h-5 w-5" strokeWidth={2} />

@@ -4,7 +4,6 @@
 	import HeaderBar from './HeaderBar.svelte';
 	import NavBar from './NavBar.svelte';
 	import SideBar from './SideBar.svelte';
-	import Menu from './Menu.svelte';
 	import TOCView from './TOCView.svelte';
 	import Spinner from './Spinner.svelte';
 	import { percentFormat } from '$lib/utils/format';
@@ -30,7 +29,8 @@
 
 	// UI State
 	let showSideBar = $state(false);
-	let showToolbars = $state(false);
+	let showHeader = $state(false);
+	let showNavBar = $state(false);
 
 	// Book metadata
 	let bookTitle = $state('Untitled Book');
@@ -146,9 +146,6 @@
 			view.renderer.setAttribute('flow', selectedLayout);
 			view.renderer.next();
 
-			// Show toolbars
-			showToolbars = true;
-
 			// Get section fractions for navigation
 			sectionFractions = Array.from(view.getSectionFractions());
 
@@ -230,17 +227,44 @@
 	function handleSeek(event: CustomEvent<{ fraction: number }>) {
 		view?.goToFraction(event.detail.fraction);
 	}
+
+	/**
+	 * Toggle header visibility
+	 */
+	function toggleHeaderVisibility() {
+		showHeader = !showHeader;
+	}
+
+	/**
+	 * Toggle navbar visibility
+	 */
+	function toggleNavBarVisibility() {
+		showNavBar = !showNavBar;
+	}
+
+	/**
+	 * Close all UI elements (called when clicking overlay)
+	 */
+	function closeAllUI() {
+		showHeader = false;
+		showNavBar = false;
+	}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="relative h-screen w-full">
-	<HeaderBar visible={showToolbars} ontoggleSidebar={() => (showSideBar = true)} {onback}>
-		<Menu bind:selectedLayout onlayoutChange={handleLayoutChange} />
-	</HeaderBar>
+<div class="reader-container relative h-screen w-full touch-none overflow-hidden">
+	<HeaderBar
+		bind:selectedLayout
+		onlayoutChange={handleLayoutChange}
+		ontoggleSidebar={() => (showSideBar = true)}
+		{onback}
+		isVisible={showHeader}
+		ontoggleVisibility={toggleHeaderVisibility}
+		oncloseAll={closeAllUI}
+	></HeaderBar>
 
 	<NavBar
-		visible={showToolbars}
 		{fraction}
 		dir={bookDir}
 		title={progressTitle}
@@ -248,6 +272,8 @@
 		ongoLeft={() => view?.goLeft()}
 		ongoRight={() => view?.goRight()}
 		onseek={handleSeek}
+		isVisible={showNavBar}
+		ontoggleVisibility={toggleNavBarVisibility}
 	/>
 
 	<SideBar bind:show={showSideBar} title={bookTitle} author={bookAuthor} coverSrc={bookCover}>
@@ -265,3 +291,16 @@
 
 	<div class="h-full w-full" bind:this={viewContainer}></div>
 </div>
+
+<!-- <style>
+	:global(.reader-container) {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		overflow: hidden;
+		touch-action: none;
+		-webkit-overflow-scrolling: touch;
+	}
+</style> -->
