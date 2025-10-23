@@ -20,6 +20,15 @@ const config = {
 		}),
 		paths: {
 			base: process.env.NODE_ENV === 'production' ? '/basil-reader' : ''
+		},
+		prerender: {
+			handleHttpError: ({ path }) => {
+				// Ignore 404 errors for favicon variants (browsers may request different formats)
+				if (path.includes('favicon')) {
+					return;
+				}
+				throw new Error(`404 ${path}`);
+			}
 		}
 	}
 };
