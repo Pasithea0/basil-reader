@@ -54,9 +54,11 @@
 		<li role="presentation" class="px-3 py-1.5 rounded-md">
 			<strong>Layout</strong>
 		</li>
-		<li role="menuitemradio" aria-checked={selectedLayout === 'paginated'}>
+		<li role="none">
 			<button
 				type="button"
+				role="menuitemradio"
+				aria-checked={selectedLayout === 'paginated'}
 				onclick={() => selectLayout('paginated')}
 				onkeydown={(e) => handleKeyDown(e, 'paginated')}
 				class="w-full text-left px-3 py-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer flex items-center gap-2 bg-transparent border-0"
@@ -71,9 +73,11 @@
 				<span>Paginated</span>
 			</button>
 		</li>
-		<li role="menuitemradio" aria-checked={selectedLayout === 'scrolled'}>
+		<li role="none">
 			<button
 				type="button"
+				role="menuitemradio"
+				aria-checked={selectedLayout === 'scrolled'}
 				onclick={() => selectLayout('scrolled')}
 				onkeydown={(e) => handleKeyDown(e, 'scrolled')}
 				class="w-full text-left px-3 py-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer flex items-center gap-2 bg-transparent border-0"

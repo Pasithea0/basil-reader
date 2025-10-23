@@ -50,6 +50,8 @@
 	hidden
 />
 <div
+	role="region"
+	aria-label="Drop zone for book files"
 	class="flex h-screen items-center justify-center text-center"
 	ondrop={handleDrop}
 	ondragover={handleDragOver}
