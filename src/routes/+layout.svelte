@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { base } from '$app/paths';
+	import '$lib/foliate-js/view.js';
 
 	let { children } = $props();
 </script>

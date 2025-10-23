@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import HeaderBar from './HeaderBar.svelte';
 	import NavBar from './NavBar.svelte';
@@ -39,6 +39,8 @@
 	let bookDir = $state<'ltr' | 'rtl'>('ltr');
 	let toc: TOCItem[] = $state([]);
 	let currentHref = $state('');
+	let currentPage = $state(0);
+	let totalPages = $state(0);
 
 	// Navigation state
 	let fraction = $state(0);
@@ -77,11 +79,10 @@
 		}
 	});
 
-	// Initialize foliate-js view component
-	onMount(async () => {
-		await import('$lib/foliate-js/view.js');
-		viewReady = true;
-	});
+    // Initialize foliate-js view component (view.js is imported globally in +layout)
+    onMount(() => {
+        viewReady = true;
+    });
 
 	// Watch for book changes and load them when ready
 	$effect(() => {
@@ -115,10 +116,22 @@
 	/**
 	 * Opens and initializes a book for reading
 	 */
-	async function openBook(file: File | FileSystemDirectoryHandle) {
+    async function openBook(file: File | FileSystemDirectoryHandle) {
 		console.log('Opening book:', file);
 
 		try {
+            // Clean up any existing view before creating a new one
+            if (view) {
+                try {
+                    view.removeEventListener('load', handleLoad as EventListener);
+                    view.removeEventListener('relocate', handleRelocate as EventListener);
+                } catch {}
+                try {
+                    view.remove();
+                } catch {}
+                view = null;
+            }
+
 			// Create and initialize foliate view
 			view = await createFoliateView(viewContainer, file);
 
@@ -168,11 +181,11 @@
 	/**
 	 * Event handler for navigation/location changes
 	 */
-	function handleRelocate({
+    function handleRelocate({
 		detail
 	}: CustomEvent<{
 		fraction: number;
-		location: { current: number };
+        location: { current: number; total?: number };
 		tocItem?: { href?: string };
 		pageItem?: { label: string };
 	}>) {
@@ -180,10 +193,14 @@
 
 		// Update fraction - this will update the slider position
 		fraction = newFraction;
+		currentPage = location?.current ?? 0;
+		totalPages = location?.total ?? totalPages;
 
 		// Update title with percentage and location
 		const percent = percentFormat.format(newFraction);
-		const loc = pageItem ? `Page ${pageItem.label}` : `Loc ${location.current}`;
+		const loc = pageItem
+			? `Page ${pageItem.label}${totalPages ? ` of ${totalPages}` : ''}`
+			: `Loc ${currentPage}${totalPages ? ` of ${totalPages}` : ''}`;
 		progressTitle = `${percent} · ${loc}`;
 
 		if (tocItem?.href) {
@@ -202,6 +219,21 @@
 			view?.goRight();
 		}
 	}
+
+    // Cleanup when component is destroyed
+    onDestroy(() => {
+        try {
+            if (view) {
+                view.removeEventListener('load', handleLoad as EventListener);
+                view.removeEventListener('relocate', handleRelocate as EventListener);
+                view.remove();
+                view = null;
+            }
+        } catch {}
+        if (bookCover) {
+            try { URL.revokeObjectURL(bookCover); } catch {}
+        }
+    });
 
 	/**
 	 * Handles layout changes (paginated vs scrolled)

@@ -150,7 +150,7 @@ export async function loadCalibreBookmarks(
 		}
 
 		// Set up annotation event listeners
-		view.addEventListener('create-overlay', ((e: CustomEvent<{ index: number }>) => {
+    view.addEventListener('create-overlayer', ((e: CustomEvent<{ index: number }>) => {
 			const { index } = e.detail;
 			const list = annotations.get(index);
 			if (list) {
