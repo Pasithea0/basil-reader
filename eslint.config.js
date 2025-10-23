@@ -8,6 +8,8 @@ import globals from 'globals';
 import ts from 'typescript-eslint';
 import svelteConfig from './svelte.config.js';
 
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+
 const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
 
 export default defineConfig(
@@ -17,6 +19,7 @@ export default defineConfig(
 	...svelte.configs.recommended,
 	prettier,
 	...svelte.configs.prettier,
+	eslintPluginPrettierRecommended,
 	{
 		ignores: ['src/lib/foliate-js/**']
 	},

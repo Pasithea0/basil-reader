@@ -119,11 +119,7 @@
 			const errorMsg = (e as Error).message;
 
 			// Show error message
-			alert(
-				`⚠️ Failed to import book\n\n` +
-					`${errorMsg}\n\n` +
-					`Please try again or check if you have enough storage space.`
-			);
+			alert(`⚠️ Failed to import book\n\n` + `${errorMsg}\n\n`);
 		} finally {
 			isImporting = false;
 			importingFileName = '';
