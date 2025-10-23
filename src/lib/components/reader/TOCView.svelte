@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ChevronRight } from 'lucide-svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	interface TOCItem {
@@ -45,14 +46,10 @@
 				aria-expanded={isExpanded}
 				aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
 			>
-				<svg
-					class="h-6 w-6 fill-current transition-transform duration-200 {isExpanded
-						? 'rotate-90'
-						: ''}"
-					viewBox="0 0 24 24"
-				>
-					<path d="M 9 6 L 15 12 L 9 18" />
-				</svg>
+				<ChevronRight
+					class="h-6 w-6 transition-transform duration-200 {isExpanded ? 'rotate-90' : ''}"
+					strokeWidth={2}
+				/>
 			</button>
 		{:else}
 			<span class="w-6 shrink-0"></span>

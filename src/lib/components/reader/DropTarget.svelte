@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { BookOpen } from 'lucide-svelte';
+
 	interface Props {
 		onopen?: (event: CustomEvent<{ file: File | FileSystemDirectoryHandle }>) => void;
 	}
@@ -71,16 +73,7 @@
 	ondragover={handleDragOver}
 >
 	<div>
-		<svg
-			class="mx-auto block fill-none stroke-current stroke-2"
-			width="72"
-			height="72"
-			aria-hidden="true"
-		>
-			<path
-				d="M36 18s-6-6-12-6-15 6-15 6v42s9-6 15-6 12 6 12 6c4-4 8-6 12-6s12 2 15 6V18c-6-4-12-6-15-6-4 0-8 2-12 6m0 0v42"
-			/>
-		</svg>
+		<BookOpen class="mx-auto block h-18 w-18" strokeWidth={2} />
 		<h1 class="mt-4 text-4xl font-black">Drop a book here!</h1>
 		<p class="mt-2">
 			Or <button

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Settings, Circle } from 'lucide-svelte';
+
 	interface Props {
 		selectedLayout?: string;
 		onlayoutChange?: (event: CustomEvent<{ value: string }>) => void;
@@ -33,17 +35,7 @@
 		onclick={toggleMenu}
 		class="p-0.5 rounded-md bg-transparent border-0 text-gray-500 hover:bg-black/10 hover:text-current"
 	>
-		<svg
-			class="block fill-none stroke-current stroke-2"
-			width="24"
-			height="24"
-			aria-hidden="true"
-		>
-			<path
-				d="M5 12.7a7 7 0 0 1 0-1.4l-1.8-2 2-3.5 2.7.5a7 7 0 0 1 1.2-.7L10 3h4l.9 2.6 1.2.7 2.7-.5 2 3.4-1.8 2a7 7 0 0 1 0 1.5l1.8 2-2 3.5-2.7-.5a7 7 0 0 1-1.2.7L14 21h-4l-.9-2.6a7 7 0 0 1-1.2-.7l-2.7.5-2-3.4 1.8-2Z"
-			/>
-			<circle cx="12" cy="12" r="3" />
-		</svg>
+		<Settings class="block h-6 w-6" strokeWidth={2} />
 	</button>
 	<ul
 		role="menu"
@@ -65,9 +57,7 @@
 			>
 				<span class="w-4 h-4 flex items-center justify-center">
 					{#if selectedLayout === 'paginated'}
-						<svg width="16" height="16" viewBox="0 0 16 16" class="fill-current">
-							<circle cx="8" cy="8" r="3" />
-						</svg>
+						<Circle class="h-4 w-4" fill="currentColor" strokeWidth={0} />
 					{/if}
 				</span>
 				<span>Paginated</span>
@@ -84,9 +74,7 @@
 			>
 				<span class="w-4 h-4 flex items-center justify-center">
 					{#if selectedLayout === 'scrolled'}
-						<svg width="16" height="16" viewBox="0 0 16 16" class="fill-current">
-							<circle cx="8" cy="8" r="3" />
-						</svg>
+						<Circle class="h-4 w-4" fill="currentColor" strokeWidth={0} />
 					{/if}
 				</span>
 				<span>Scrolled</span>

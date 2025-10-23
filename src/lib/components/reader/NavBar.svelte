@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
+
 	interface Props {
 		visible?: boolean;
 		fraction?: number;
@@ -38,9 +40,7 @@
 		onclick={() => ongoLeft?.()}
 		class="shrink-0 rounded-md border-0 bg-transparent p-0.5 text-gray-500 hover:bg-black/10 hover:text-current"
 	>
-		<svg class="block fill-none stroke-current stroke-2" width="24" height="24" aria-hidden="true">
-			<path d="M 15 6 L 9 12 L 15 18" />
-		</svg>
+		<ChevronLeft class="block h-6 w-6" strokeWidth={2} />
 	</button>
 	<input
 		id="progress-slider"
@@ -66,8 +66,6 @@
 		onclick={() => ongoRight?.()}
 		class="shrink-0 rounded-md border-0 bg-transparent p-0.5 text-gray-500 hover:bg-black/10 hover:text-current"
 	>
-		<svg class="block fill-none stroke-current stroke-2" width="24" height="24" aria-hidden="true">
-			<path d="M 9 6 L 15 12 L 9 18" />
-		</svg>
+		<ChevronRight class="block h-6 w-6" strokeWidth={2} />
 	</button>
 </div>

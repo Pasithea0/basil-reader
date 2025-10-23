@@ -10,6 +10,14 @@
 	import { formatLanguageMap, formatContributor, percentFormat } from '$lib/utils/format';
 	import { getCSS } from '$lib/utils/css';
 	import type { FoliateView } from '$lib/types/foliate';
+	import { addBookToLibrary, base64ToFile, getStorageInfo, formatBytes, type StoredBook } from '$lib/utils/library';
+
+	interface Props {
+		onTitleChange?: string;
+		onback?: () => void;
+		initialBook?: StoredBook;
+		initialFile?: File;
+	}
 
 	let showDropTarget = $state(true);
 	let showSideBar = $state(false);
@@ -22,7 +30,7 @@
 	let bookDir = $state<'ltr' | 'rtl'>('ltr');
 
 	// Expose bookTitle as a prop so parent can access it
-	let { onTitleChange = $bindable() } = $props<{ onTitleChange?: string }>();
+	let { onTitleChange = $bindable(), onback, initialBook, initialFile }: Props = $props();
 	$effect(() => {
 		// Only update title when a book is actually loaded (not the default placeholder)
 		if (bookTitle !== 'Untitled Book') {
@@ -59,12 +67,50 @@
 	let annotations = new SvelteMap<number, Array<{ value: string; color?: string; note?: string }>>();
 	let annotationsByValue = new SvelteMap<string, { value: string; color?: string; note?: string }>();
 
+	let viewReady = $state(false);
+	let loadedFileId = $state<string | null>(null);
+
 	onMount(async () => {
 		// Import foliate-js view component
 		await import('$lib/foliate-js/view.js');
+		viewReady = true;
 	});
 
-	async function openBook(file: File | FileSystemDirectoryHandle) {
+	// Watch for file/book changes and load them when ready
+	$effect(() => {
+		if (!viewReady) return;
+
+		// Load initial file if provided (new upload)
+		if (initialFile && !loadedFileId) {
+			const fileId = `file-${initialFile.name}-${initialFile.size}`;
+			if (loadedFileId !== fileId) {
+				loadedFileId = fileId;
+				openBook(initialFile, false).catch((e) => {
+					console.error('Failed to load initial file:', e);
+					loadedFileId = null;
+				});
+			}
+		}
+		// Load initial book if provided (from library)
+		else if (initialBook && !initialFile) {
+			const bookId = `book-${initialBook.id}`;
+			if (loadedFileId !== bookId) {
+				loadedFileId = bookId;
+				base64ToFile(
+					initialBook.fileData,
+					initialBook.fileName,
+					initialBook.fileType
+				).then((file) => {
+					return openBook(file, true); // Don't save again since it's already in library
+				}).catch((e) => {
+					console.error('Failed to load initial book:', e);
+					loadedFileId = null;
+				});
+			}
+		}
+	});
+
+	async function openBook(file: File | FileSystemDirectoryHandle, skipSave = false) {
 		console.log('openBook called with:', file);
 		showDropTarget = false;
 
@@ -109,13 +155,45 @@
 		bookDir = book.dir as 'ltr' | 'rtl';
 
 		// Get cover
+		let coverBlob: Blob | undefined;
 		try {
-			const coverBlob = await book.getCover?.();
-			if (coverBlob) {
-				bookCover = URL.createObjectURL(coverBlob);
+			const cover = await book.getCover?.();
+			if (cover) {
+				coverBlob = cover;
+				bookCover = URL.createObjectURL(cover);
 			}
 		} catch (e) {
 			console.error('Failed to load cover:', e);
+		}
+
+		// Save to library if it's a new upload
+		if (!skipSave && file instanceof File) {
+			try {
+				await addBookToLibrary(file, {
+					title: bookTitle,
+					author: bookAuthor,
+					cover: coverBlob
+				});
+				console.log('Book saved to library');
+			} catch (e) {
+				console.error('Failed to save book to library:', e);
+				const storageInfo = getStorageInfo();
+				const errorMsg = (e as Error).message;
+				
+				// Show a helpful error message
+				alert(
+					`⚠️ Failed to save book to library\n\n` +
+					`${errorMsg}\n\n` +
+					`📊 Storage Status:\n` +
+					`• Used: ${formatBytes(storageInfo.used)} / ${formatBytes(storageInfo.total)}\n` +
+					`• Available: ${formatBytes(storageInfo.available)}\n` +
+					`• Usage: ${storageInfo.usedPercent.toFixed(1)}%\n\n` +
+					`💡 Tips:\n` +
+					`• Remove some books from your library to free up space\n` +
+					`• The book is still open and readable, just not saved\n` +
+					`• You can use the back button to return to your library`
+				);
+			}
 		}
 
 		// Setup TOC
@@ -226,7 +304,7 @@
 		<DropTarget onopen={(e) => openBook(e.detail.file)} />
 	{/if}
 
-	<HeaderBar visible={showToolbars} ontoggleSidebar={() => (showSideBar = true)}>
+	<HeaderBar visible={showToolbars} ontoggleSidebar={() => (showSideBar = true)} {onback}>
 		<Menu bind:selectedLayout onlayoutChange={handleLayoutChange} />
 	</HeaderBar>
 
