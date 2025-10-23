@@ -200,8 +200,8 @@
 					class="relative cursor-pointer"
 					ondrop={handleDrop}
 					ondragover={handleDragOver}
-					onclick={handleAddBookClick}
-					onkeydown={(e) => e.key === 'Enter' && handleAddBookClick()}
+					onclick={handleFileButtonClick}
+					onkeydown={(e) => e.key === 'Enter' && handleFileButtonClick()}
 				>
 					<div class="relative mb-3 flex aspect-2/3 w-full flex-col items-center justify-center overflow-hidden rounded-lg border-4 border-dashed border-gray-300 bg-gray-50 shadow-lg transition-colors hover:border-blue-400 hover:bg-blue-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:border-blue-500 dark:hover:bg-gray-700">
 						<BookOpen class="h-16 w-16 text-gray-400 dark:text-gray-500" strokeWidth={2} />
