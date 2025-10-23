@@ -9,7 +9,7 @@
 	import Spinner from './Spinner.svelte';
 	import { percentFormat } from '$lib/utils/format';
 	import { getCSS } from '$lib/utils/css';
-	import { addBookToLibrary, getBookById, getStorageInfo, formatBytes, type StoredBook } from '$lib/utils/library';
+	import { getBookById, type StoredBook } from '$lib/utils/library';
 	import { createFoliateView, extractBookMetadata, setupErrorHandling, loadCalibreBookmarks, type TOCItem } from '$lib/utils/bookLoader';
 	import type { FoliateView } from '$lib/types/foliate';
 
@@ -17,11 +17,10 @@
 		onTitleChange?: string;
 		onback?: () => void;
 		initialBook?: StoredBook;
-		initialFile?: File;
 	}
 
 	// Props
-	let { onTitleChange = $bindable(), onback, initialBook, initialFile }: Props = $props();
+	let { onTitleChange = $bindable(), onback, initialBook }: Props = $props();
 
 	// UI State
 	let showSideBar = $state(false);
@@ -72,38 +71,24 @@
 		viewReady = true;
 	});
 
-	// Watch for file/book changes and load them when ready
+	// Watch for book changes and load them when ready
 	$effect(() => {
 		if (!viewReady) return;
 
-		// Load initial file if provided (new upload)
-		if (initialFile && !loadedFileId) {
-			const fileId = `file-${initialFile.name}-${initialFile.size}`;
-			if (loadedFileId !== fileId) {
-				loadedFileId = fileId;
-				isLoadingBook = true;
-				openBook(initialFile, false).catch((e) => {
-					console.error('Failed to load initial file:', e);
-					loadedFileId = null;
-				}).finally(() => {
-					isLoadingBook = false;
-				});
-			}
-		}
 		// Load initial book if provided (from library)
-		else if (initialBook && !initialFile) {
+		if (initialBook) {
 			const bookId = `book-${initialBook.id}`;
 			if (loadedFileId !== bookId) {
 				loadedFileId = bookId;
 				isLoadingBook = true;
 				getBookById(initialBook.id).then((file) => {
 					if (file) {
-						return openBook(file, true);
+						return openBook(file);
 					} else {
 						throw new Error('Book not found in library');
 					}
 				}).catch((e) => {
-					console.error('Failed to load initial book:', e);
+					console.error('Failed to load book:', e);
 					loadedFileId = null;
 				}).finally(() => {
 					isLoadingBook = false;
@@ -115,7 +100,7 @@
 	/**
 	 * Opens and initializes a book for reading
 	 */
-	async function openBook(file: File | FileSystemDirectoryHandle, skipSave = false) {
+	async function openBook(file: File | FileSystemDirectoryHandle) {
 		console.log('Opening book:', file);
 
 		try {
@@ -149,11 +134,6 @@
 			// Show toolbars
 			showToolbars = true;
 
-			// Save to library if it's a new upload
-			if (!skipSave && file instanceof File) {
-				await saveBookToLibrary(file, metadata);
-			}
-
 			// Get section fractions for navigation
 			sectionFractions = Array.from(view.getSectionFractions());
 
@@ -162,37 +142,6 @@
 		} catch (e) {
 			console.error('Failed to open book:', e);
 			throw e;
-		}
-	}
-
-	/**
-	 * Saves a book to the library with error handling
-	 */
-	async function saveBookToLibrary(
-		file: File,
-		metadata: { title: string; author: string; cover?: Blob }
-	) {
-		try {
-			await addBookToLibrary(file, metadata);
-			console.log('Book saved to library');
-		} catch (e) {
-			console.error('Failed to save book to library:', e);
-			const storageInfo = await getStorageInfo();
-			const errorMsg = (e as Error).message;
-			
-			// Show a helpful error message
-			alert(
-				`⚠️ Failed to save book to library\n\n` +
-				`${errorMsg}\n\n` +
-				`📊 Storage Status:\n` +
-				`• Used: ${formatBytes(storageInfo.used)} / ${formatBytes(storageInfo.total)}\n` +
-				`• Available: ${formatBytes(storageInfo.available)}\n` +
-				`• Usage: ${storageInfo.usedPercent.toFixed(1)}%\n\n` +
-				`💡 Tips:\n` +
-				`• Remove some books from your library to free up space\n` +
-				`• The book is still open and readable, just not saved\n` +
-				`• You can use the back button to return to your library`
-			);
 		}
 	}
 

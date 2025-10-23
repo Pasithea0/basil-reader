@@ -31,10 +31,8 @@ export async function createFoliateView(
 	// We need to use DOM manipulation here because foliate-view is a custom element
 	// from an external library (foliate-js) that must be created imperatively.
 	// Svelte can't manage this element because it's defined in vanilla JS.
-	/* eslint-disable svelte/no-dom-manipulating */
 	const viewElement = document.createElement('foliate-view') as unknown as FoliateView;
 	container.appendChild(viewElement);
-	/* eslint-enable svelte/no-dom-manipulating */
 
 	await viewElement.open(file);
 
@@ -90,6 +88,35 @@ export function setupErrorHandling(view: FoliateView): void {
 }
 
 /**
+ * Extracts metadata from a book file without fully opening it in the reader
+ * This is useful for importing books to the library without immediately reading them
+ */
+export async function extractMetadataFromFile(file: File): Promise<BookMetadata> {
+	// Ensure foliate-js view module is loaded
+	await import('$lib/foliate-js/view.js');
+	
+	// Create a temporary container for metadata extraction
+	const tempContainer = document.createElement('div');
+	tempContainer.style.display = 'none';
+	document.body.appendChild(tempContainer);
+
+	try {
+		// Create a temporary view to extract metadata
+		const view = await createFoliateView(tempContainer, file);
+		const metadata = await extractBookMetadata(view);
+		
+		// Clean up
+		tempContainer.remove();
+		
+		return metadata;
+	} catch (e) {
+		// Clean up on error
+		tempContainer.remove();
+		throw e;
+	}
+}
+
+/**
  * Loads and sets up Calibre bookmarks if available
  */
 export async function loadCalibreBookmarks(
@@ -103,9 +130,7 @@ export async function loadCalibreBookmarks(
 		
 		if (!bookmarks) return;
 
-		// @ts-expect-error - Runtime import from external JS library
 		const { fromCalibreHighlight } = await import('$lib/foliate-js/epubcfi.js');
-		// @ts-expect-error - Runtime import from external JS library
 		const { Overlayer } = await import('$lib/foliate-js/overlayer.js');
 
 		// Process bookmarks

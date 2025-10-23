@@ -2,12 +2,14 @@
 	import { onMount } from 'svelte';
 	import { Plus, BookOpen, X, Upload, Trash2 } from 'lucide-svelte';
 	import BookItem from './BookItem.svelte';
+	import Spinner from './Spinner.svelte';
 	import { 
 		getLibrary, 
 		removeBookFromLibrary, 
 		getStorageInfo, 
 		formatBytes,
 		clearLibrary,
+		addBookToLibrary,
 		type StoredBook,
 		type StorageInfo 
 	} from '$lib/utils/library';
@@ -17,18 +19,20 @@
 		getFileFromInputEvent,
 		SUPPORTED_BOOK_FORMATS 
 	} from '$lib/utils/fileHandler';
+	import { extractMetadataFromFile } from '$lib/utils/bookLoader';
 
 	interface Props {
 		onOpenBook?: (book: StoredBook) => void;
-		onUploadBook?: (file: File) => void;
 	}
 
-	let { onOpenBook, onUploadBook }: Props = $props();
+	let { onOpenBook }: Props = $props();
 
 	// State
 	let library = $state<StoredBook[]>([]);
 	let storageInfo = $state<StorageInfo>({ used: 0, total: 0, available: 0, usedPercent: 0 });
 	let showUploadModal = $state(false);
+	let isImporting = $state(false);
+	let importingFileName = $state('');
 
 	const FILE_INPUT_ID = 'library-file-input';
 
@@ -88,13 +92,47 @@
 	}
 
 	/**
+	 * Imports a book file to the library
+	 */
+	async function importBook(file: File) {
+		isImporting = true;
+		importingFileName = file.name;
+		showUploadModal = false;
+
+		try {
+			// Extract metadata from the file
+			const metadata = await extractMetadataFromFile(file);
+			
+			// Save to library
+			await addBookToLibrary(file, metadata);
+			
+			// Refresh library
+			await updateLibraryData();
+			
+			console.log('Book imported successfully:', metadata.title);
+		} catch (e) {
+			console.error('Failed to import book:', e);
+			const errorMsg = (e as Error).message;
+			
+			// Show error message
+			alert(
+				`⚠️ Failed to import book\n\n` +
+				`${errorMsg}\n\n` +
+				`Please try again or check if you have enough storage space.`
+			);
+		} finally {
+			isImporting = false;
+			importingFileName = '';
+		}
+	}
+
+	/**
 	 * Handles file input change
 	 */
 	function handleFileInputChange(e: Event) {
 		const file = getFileFromInputEvent(e);
 		if (file) {
-			showUploadModal = false;
-			onUploadBook?.(file);
+			importBook(file);
 		}
 	}
 
@@ -105,8 +143,7 @@
 		e.preventDefault();
 		const file = getFileFromDragEvent(e);
 		if (file) {
-			showUploadModal = false;
-			onUploadBook?.(file);
+			importBook(file);
 		}
 	}
 
@@ -136,6 +173,13 @@
 />
 
 <div class="relative h-screen w-full overflow-auto">
+	<!-- Importing overlay -->
+	{#if isImporting}
+		<div class="fixed inset-0 z-50 flex items-center justify-center bg-[Canvas]/80 backdrop-blur-sm">
+			<Spinner size="lg" text="Importing {importingFileName}..." />
+		</div>
+	{/if}
+
 	<!-- Library header -->
 	<div class="sticky top-0 z-10 bg-[Canvas] px-6 py-4 shadow-sm">
 		<div class="flex items-center justify-between">
