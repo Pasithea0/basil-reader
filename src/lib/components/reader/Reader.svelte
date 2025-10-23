@@ -10,7 +10,7 @@
 	import { formatLanguageMap, formatContributor, percentFormat } from '$lib/utils/format';
 	import { getCSS } from '$lib/utils/css';
 	import type { FoliateView } from '$lib/types/foliate';
-	import { addBookToLibrary, base64ToFile, getStorageInfo, formatBytes, type StoredBook } from '$lib/utils/library';
+	import { addBookToLibrary, getBookById, getStorageInfo, formatBytes, type StoredBook } from '$lib/utils/library';
 
 	interface Props {
 		onTitleChange?: string;
@@ -96,12 +96,12 @@
 			const bookId = `book-${initialBook.id}`;
 			if (loadedFileId !== bookId) {
 				loadedFileId = bookId;
-				base64ToFile(
-					initialBook.fileData,
-					initialBook.fileName,
-					initialBook.fileType
-				).then((file) => {
-					return openBook(file, true); // Don't save again since it's already in library
+				getBookById(initialBook.id).then((file) => {
+					if (file) {
+						return openBook(file, true); // Don't save again since it's already in library
+					} else {
+						throw new Error('Book not found in library');
+					}
 				}).catch((e) => {
 					console.error('Failed to load initial book:', e);
 					loadedFileId = null;
@@ -177,7 +177,7 @@
 				console.log('Book saved to library');
 			} catch (e) {
 				console.error('Failed to save book to library:', e);
-				const storageInfo = getStorageInfo();
+				const storageInfo = await getStorageInfo();
 				const errorMsg = (e as Error).message;
 				
 				// Show a helpful error message

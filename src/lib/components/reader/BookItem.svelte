@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { BookOpen, X } from 'lucide-svelte';
 	import type { StoredBook } from '$lib/utils/library';
+	import { formatBytes } from '$lib/utils/library';
 
 	interface Props {
 		book: StoredBook;
@@ -25,8 +26,8 @@
 		class="w-full border-0 bg-transparent p-0 text-left transition-transform hover:scale-105"
 	>
 		<div class="relative mb-3 aspect-2/3 w-full overflow-hidden rounded-lg bg-gray-200 shadow-lg dark:bg-gray-700">
-			{#if book.cover}
-				<img src={book.cover} alt="{book.title} cover" class="h-full w-full object-cover" />
+			{#if book.coverUrl}
+				<img src={book.coverUrl} alt="{book.title} cover" class="h-full w-full object-cover" />
 			{:else}
 				<div class="flex h-full w-full items-center justify-center">
 					<BookOpen class="h-1/3 w-1/3 text-gray-400" strokeWidth={2} />
@@ -37,6 +38,7 @@
 		{#if book.author}
 			<p class="line-clamp-1 text-xs text-gray-600 dark:text-gray-400">{book.author}</p>
 		{/if}
+		<p class="text-xs text-gray-500 dark:text-gray-500">{formatBytes(book.fileSize)}</p>
 	</button>
 
 	{#if showRemoveButton && onremove}

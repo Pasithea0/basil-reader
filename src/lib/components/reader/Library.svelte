@@ -23,9 +23,9 @@
 	let storageInfo = $state<StorageInfo>({ used: 0, total: 0, available: 0, usedPercent: 0 });
 	let showUploadModal = $state(false);
 
-	function updateLibraryData() {
-		library = getLibrary();
-		storageInfo = getStorageInfo();
+	async function updateLibraryData() {
+		library = await getLibrary();
+		storageInfo = await getStorageInfo();
 	}
 
 	onMount(() => {
@@ -36,19 +36,19 @@
 		onOpenBook?.(book);
 	}
 
-	function handleRemoveBook(bookId: string) {
+	async function handleRemoveBook(bookId: string) {
 		if (confirm('Are you sure you want to remove this book from your library?')) {
-			removeBookFromLibrary(bookId);
-			updateLibraryData();
+			await removeBookFromLibrary(bookId);
+			await updateLibraryData();
 		}
 	}
 
-	function handleClearLibrary() {
+	async function handleClearLibrary() {
 		if (library.length === 0) return;
 		
 		if (confirm(`Are you sure you want to remove all ${library.length} book${library.length === 1 ? '' : 's'} from your library?\n\nThis action cannot be undone.`)) {
-			clearLibrary();
-			updateLibraryData();
+			await clearLibrary();
+			await updateLibraryData();
 		}
 	}
 
@@ -123,19 +123,23 @@
 			<p class="text-sm text-gray-600 dark:text-gray-400">
 				{library.length} {library.length === 1 ? 'book' : 'books'}
 			</p>
-			<div class="h-1 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-				<div
-					class="h-full rounded-full transition-all {storageInfo.usedPercent > 90
-						? 'bg-red-500'
-						: storageInfo.usedPercent > 70
-							? 'bg-yellow-500'
-							: 'bg-blue-500'}"
-					style="width: {Math.min(storageInfo.usedPercent, 100)}%"
-				></div>
-			</div>
-			<p class="text-sm text-gray-600 dark:text-gray-400">
-				{formatBytes(storageInfo.used)} / {formatBytes(storageInfo.total)}
-			</p>
+			{#if storageInfo.total > 0}
+				<div class="h-1 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+					<div
+						class="h-full rounded-full transition-all {storageInfo.usedPercent > 90
+							? 'bg-red-500'
+							: storageInfo.usedPercent > 70
+								? 'bg-yellow-500'
+								: 'bg-blue-500'}"
+						style="width: {Math.min(storageInfo.usedPercent, 100)}%"
+					></div>
+				</div>
+				<p class="text-sm text-gray-600 dark:text-gray-400">
+					{formatBytes(storageInfo.used)} / {formatBytes(storageInfo.total)}
+				</p>
+			{:else}
+				<p class="text-sm text-gray-500 dark:text-gray-500">Loading storage info...</p>
+			{/if}
 		</div>
 	</div>
 
