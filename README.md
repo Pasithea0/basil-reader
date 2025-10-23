@@ -107,10 +107,10 @@ basil-reader/
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
+| Key       | Action        |
+| --------- | ------------- |
 | `←` / `h` | Previous page |
-| `→` / `l` | Next page |
+| `→` / `l` | Next page     |
 
 ## Architecture
 
@@ -149,6 +149,7 @@ The reader implements Content Security Policy (CSP) to prevent execution of scri
 ### Testing
 
 Open test ebooks can be found at:
+
 - [Standard Ebooks](https://standardebooks.org/)
 - [Project Gutenberg](https://www.gutenberg.org/)
 - [EPUB Test Files](https://github.com/johnfactotum/epub-test)
@@ -156,6 +157,7 @@ Open test ebooks can be found at:
 ## Browser Support
 
 Supports the latest versions of:
+
 - Chrome/Chromium
 - Firefox
 - Safari/WebKit

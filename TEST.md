@@ -3,6 +3,7 @@
 ## Quick Test
 
 1. **Start the server**:
+
    ```bash
    pnpm dev
    ```
@@ -25,6 +26,7 @@
 ## What You Should See
 
 ### In Console:
+
 ```
 File button clicked
 Input element: <input type="file" ...>
@@ -35,6 +37,7 @@ Created foliate-view element: <foliate-view>
 ```
 
 ### On Page:
+
 1. The "Drop a book here!" screen should disappear
 2. The book content should start loading
 3. Top and bottom toolbars should appear
@@ -45,6 +48,7 @@ Created foliate-view element: <foliate-view>
 If you don't have an ebook file, download a free one:
 
 ### EPUB Files:
+
 - **Standard Ebooks**: https://standardebooks.org/
   - Beautiful, well-formatted classics
   - Example: [Pride and Prejudice](https://standardebooks.org/ebooks/jane-austen/pride-and-prejudice)
@@ -53,6 +57,7 @@ If you don't have an ebook file, download a free one:
   - Select EPUB format when downloading
 
 ### Sample Direct Links:
+
 ```bash
 # Download a sample EPUB
 curl -o alice.epub "https://www.gutenberg.org/ebooks/11.epub3.images"
@@ -64,21 +69,25 @@ wget -O alice.epub "https://www.gutenberg.org/ebooks/11.epub3.images"
 ## Common Issues
 
 ### Nothing happens when clicking button:
+
 - Check console for errors
 - Verify dev server is running
 - Try hard refresh (Ctrl+Shift+R)
 
 ### Console shows errors about module loading:
+
 - Run `pnpm install` again
 - Check that `src/lib/foliate-js/view.js` exists
 - Try: `git submodule update --init --recursive`
 
 ### File picker opens but selecting file does nothing:
+
 - Check console logs - should see "File input changed"
 - If no logs, there's an event binding issue
 - Try a different browser
 
 ### Drop doesn't work:
+
 - Some browsers block drag/drop in certain modes
 - Try the file button instead
 - Check console for "Drop event" message
@@ -125,6 +134,7 @@ Once file upload works:
 ## Report Results
 
 If still not working, provide:
+
 1. Browser name and version
 2. Full console output (copy all errors/logs)
 3. Contents of src/lib/foliate-js/ directory (`ls src/lib/foliate-js/`)

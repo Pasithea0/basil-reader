@@ -97,7 +97,7 @@ Each component includes its original styles:
 ## File Count Summary
 
 - **Svelte Components**: 7 files
-- **Utility Modules**: 2 files  
+- **Utility Modules**: 2 files
 - **Type Definitions**: 1 file
 - **Index/Export Files**: 2 files
 - **Route Files**: 2 files

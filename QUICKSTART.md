@@ -34,6 +34,7 @@ Open http://localhost:5173 and drag & drop an ebook file!
 ## Where to Get Test Books?
 
 Free, legal ebooks:
+
 - [Standard Ebooks](https://standardebooks.org/) - Beautifully formatted classics
 - [Project Gutenberg](https://www.gutenberg.org/) - Thousands of free books
 - [Internet Archive](https://archive.org/details/books) - Massive collection
@@ -48,15 +49,18 @@ Free, legal ebooks:
 ## Troubleshooting
 
 ### No files showing after drop?
+
 - Check browser console (F12) for errors
 - Ensure foliate-js submodule is initialized: `git submodule update --init`
 
 ### Page won't load?
+
 - Clear browser cache
 - Try a different book file
 - Check Content Security Policy isn't blocking
 
 ### Performance issues?
+
 - Switch from Paginated to Scrolled mode
 - Try closing other browser tabs
 - Update to latest version of foliate-js

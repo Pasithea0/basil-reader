@@ -125,6 +125,7 @@ The Svelte implementation improves on the original HTML/JS version:
 ## Next Steps for Enhancement
 
 Potential features to add:
+
 - [ ] Bookmarking system
 - [ ] Annotation creation (not just viewing)
 - [ ] Search functionality
@@ -152,6 +153,7 @@ pnpm run update-submodules
 ## Status: ✅ Complete
 
 All requested components have been created and integrated:
+
 - ✅ Reader component with foliate-js integration
 - ✅ Individual UI components with original styles
 - ✅ Proper event handling and state management
