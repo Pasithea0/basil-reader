@@ -41,7 +41,7 @@
 		{#if hasSubitems}
 			<button
 				onclick={() => toggleExpand(itemId)}
-				class="flex h-6 w-6 flex-shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 opacity-50 transition-transform duration-200 hover:opacity-100"
+				class="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 opacity-50 transition-transform duration-200 hover:opacity-100"
 				aria-expanded={isExpanded}
 				aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
 			>
@@ -55,7 +55,7 @@
 				</svg>
 			</button>
 		{:else}
-			<span class="w-6 flex-shrink-0"></span>
+			<span class="w-6 shrink-0"></span>
 		{/if}
 
 		{#if item.href}
@@ -63,7 +63,7 @@
 				href="#{item.href}"
 				onclick={(e) => {
 					e.preventDefault();
-					handleItemClick(item.href);
+					if (item.href) handleItemClick(item.href);
 				}}
 				class="block flex-1 rounded-md px-2 py-2 text-[CanvasText] no-underline hover:bg-black/5 dark:hover:bg-white/10 {isCurrent
 					? 'bg-black/5 font-bold dark:bg-white/10'

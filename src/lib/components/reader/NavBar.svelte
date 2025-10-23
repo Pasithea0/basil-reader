@@ -36,7 +36,7 @@
 		id="left-button"
 		aria-label="Go left"
 		onclick={() => ongoLeft?.()}
-		class="flex-shrink-0 rounded-md border-0 bg-transparent p-0.5 text-gray-500 hover:bg-black/10 hover:text-current"
+		class="shrink-0 rounded-md border-0 bg-transparent p-0.5 text-gray-500 hover:bg-black/10 hover:text-current"
 	>
 		<svg class="block fill-none stroke-current stroke-2" width="24" height="24" aria-hidden="true">
 			<path d="M 15 6 L 9 12 L 15 18" />
@@ -53,7 +53,7 @@
 		value={fraction}
 		{title}
 		oninput={handleInput}
-		class="mx-3 flex-grow {visible ? 'visible' : 'invisible'}"
+		class="mx-3 grow {visible ? 'visible' : 'invisible'}"
 	/>
 	<datalist id="tick-marks">
 		{#each sectionFractions as frac, i (i)}
@@ -64,7 +64,7 @@
 		id="right-button"
 		aria-label="Go right"
 		onclick={() => ongoRight?.()}
-		class="flex-shrink-0 rounded-md border-0 bg-transparent p-0.5 text-gray-500 hover:bg-black/10 hover:text-current"
+		class="shrink-0 rounded-md border-0 bg-transparent p-0.5 text-gray-500 hover:bg-black/10 hover:text-current"
 	>
 		<svg class="block fill-none stroke-current stroke-2" width="24" height="24" aria-hidden="true">
 			<path d="M 9 6 L 15 12 L 9 18" />

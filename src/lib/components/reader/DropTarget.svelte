@@ -1,6 +1,6 @@
 <script lang="ts">
 	interface Props {
-		onopen?: (event: CustomEvent<{ file: File }>) => void;
+		onopen?: (event: CustomEvent<{ file: File | FileSystemDirectoryHandle }>) => void;
 	}
 
 	let { onopen }: Props = $props();
@@ -9,14 +9,28 @@
 		e.preventDefault();
 	}
 
-	function handleDrop(e: DragEvent) {
+	async function handleDrop(e: DragEvent) {
 		console.log('Drop event', e);
 		e.preventDefault();
 		const item = Array.from(e.dataTransfer?.items || []).find((item) => item.kind === 'file');
 		console.log('Dropped item:', item);
 		if (item) {
-			const entry = item.webkitGetAsEntry();
-			const file = entry?.isFile ? item.getAsFile() : entry;
+			let file: File | FileSystemDirectoryHandle | null = null;
+			
+			if ('getAsFileSystemHandle' in item && typeof item.getAsFileSystemHandle === 'function') {
+				try {
+					const handle = await item.getAsFileSystemHandle();
+					file = handle as File | FileSystemDirectoryHandle;
+				} catch (e) {
+					console.warn('Failed to get FileSystemHandle, falling back to file:', e);
+				}
+			}
+			
+			// Fallback to getAsFile for regular files
+			if (!file) {
+				file = item.getAsFile();
+			}
+			
 			console.log('File to open:', file);
 			if (file) {
 				onopen?.(new CustomEvent('open', { detail: { file } }));
