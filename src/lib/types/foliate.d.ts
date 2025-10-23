@@ -26,7 +26,7 @@ export interface FoliateSection {
 	size?: number;
 	linear?: 'yes' | 'no';
 	cfi?: string;
-	id?: any;
+	id?: string | number;
 }
 
 export interface TOCItem {
@@ -63,7 +63,7 @@ export interface CalibreBookmark {
 		which: string;
 	};
 	notes?: string;
-	[key: string]: any;
+	[key: string]: unknown;
 }
 
 export interface FoliateView extends HTMLElement {
@@ -76,6 +76,7 @@ export interface FoliateView extends HTMLElement {
 	addAnnotation(annotation: Annotation): void;
 	book: FoliateBook;
 	renderer: FoliateRenderer;
+	addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
 }
 
 export interface FoliateRenderer extends HTMLElement {
@@ -86,7 +87,7 @@ export interface FoliateRenderer extends HTMLElement {
 }
 
 export interface Annotation {
-	value: any;
+	value: string | Record<string, unknown>;
 	color?: string;
 	note?: string;
 }
@@ -118,20 +119,20 @@ export interface CreateOverlayEvent extends CustomEvent {
 	detail: {
 		doc: Document;
 		index: number;
-		attach: (overlay: any) => void;
+		attach: (overlay: { element: HTMLElement; redraw: () => void }) => void;
 	};
 }
 
 export interface DrawAnnotationEvent extends CustomEvent {
 	detail: {
-		draw: (fn: any, options: any) => void;
+		draw: (fn: (range: Range) => SVGElement, options: Record<string, unknown>) => void;
 		annotation: Annotation;
 	};
 }
 
 export interface ShowAnnotationEvent extends CustomEvent {
 	detail: {
-		value: any;
+		value: string | Record<string, unknown>;
 	};
 }
 

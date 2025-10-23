@@ -56,7 +56,7 @@
 		class="mx-3 flex-grow {visible ? 'visible' : 'invisible'}"
 	/>
 	<datalist id="tick-marks">
-		{#each sectionFractions as frac}
+		{#each sectionFractions as frac, i (i)}
 			<option value={frac}></option>
 		{/each}
 	</datalist>

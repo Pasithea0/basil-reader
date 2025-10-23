@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { SvelteMap } from 'svelte/reactivity';
 	import DropTarget from './DropTarget.svelte';
 	import HeaderBar from './HeaderBar.svelte';
 	import NavBar from './NavBar.svelte';
@@ -8,18 +9,25 @@
 	import TOCView from './TOCView.svelte';
 	import { formatLanguageMap, formatContributor, percentFormat } from '$lib/utils/format';
 	import { getCSS } from '$lib/utils/css';
+	import type { FoliateView } from '$lib/types/foliate';
 
 	let showDropTarget = $state(true);
 	let showSideBar = $state(false);
 	let showToolbars = $state(false);
-	let showProgressSlider = $state(false);
 
 	// Book metadata
 	let bookTitle = $state('Untitled Book');
 	let bookAuthor = $state('');
 	let bookCover = $state('');
 	let bookDir = $state('ltr');
-	let toc: any[] = $state([]);
+	
+	interface TOCItem {
+		label: string;
+		href?: string;
+		subitems?: TOCItem[];
+	}
+	
+	let toc: TOCItem[] = $state([]);
 	let currentHref = $state('');
 
 	// Navigation state
@@ -38,39 +46,40 @@
 
 	// Foliate view reference
 	let viewContainer: HTMLElement;
-	let view: any;
-	let annotations = new Map();
-	let annotationsByValue = new Map();
+	let view: FoliateView | null = null;
+	let annotations = new SvelteMap<number, Array<{ value: unknown; color?: string; note?: string }>>();
+	let annotationsByValue = new SvelteMap<unknown, { value: unknown; color?: string; note?: string }>();
 
 	onMount(async () => {
 		// Import foliate-js view component
 		await import('$lib/foliate-js/view.js');
 	});
 
-	async function openBook(file: File | any) {
+	async function openBook(file: File | FileSystemDirectoryHandle) {
 		console.log('openBook called with:', file);
 		showDropTarget = false;
 
 		// Create foliate-view element
-		view = document.createElement('foliate-view');
-		viewContainer.appendChild(view);
+		const viewElement = document.createElement('foliate-view') as unknown as FoliateView;
+		view = viewElement;
+		viewContainer.appendChild(viewElement);
 		console.log('Created foliate-view element:', view);
 
 		await view.open(file);
 
 		// Set up event listeners
-		view.addEventListener('load', handleLoad);
-		view.addEventListener('relocate', handleRelocate);
+		view.addEventListener('load', handleLoad as EventListener);
+		view.addEventListener('relocate', handleRelocate as EventListener);
 
 		const { book } = view;
 
 		// Handle transform errors
-		book.transformTarget?.addEventListener('data', ({ detail }: any) => {
-			detail.data = Promise.resolve(detail.data).catch((e: any) => {
+		book.transformTarget?.addEventListener('data', (({ detail }: CustomEvent<{ data: Promise<unknown>; name: string }>) => {
+			detail.data = Promise.resolve(detail.data).catch((e: Error) => {
 				console.error(new Error(`Failed to load ${detail.name}`, { cause: e }));
 				return '';
 			});
-		});
+		}) as EventListener);
 
 		// Apply styles
 		view.renderer.setStyles?.(getCSS(style));
@@ -97,7 +106,7 @@
 
 		// Setup TOC
 		if (book.toc) {
-			toc = book.toc;
+			toc = book.toc as TOCItem[];
 		}
 
 		// Get section fractions
@@ -113,7 +122,7 @@
 				for (const obj of bookmarks) {
 					if (obj.type === 'highlight') {
 						const value = fromCalibreHighlight(obj);
-						const color = obj.style.which;
+						const color = obj.style?.which;
 						const note = obj.notes;
 						const annotation = { value, color, note };
 						const list = annotations.get(obj.spine_index);
@@ -123,40 +132,40 @@
 					}
 				}
 
-				view.addEventListener('create-overlay', (e: any) => {
+				view.addEventListener('create-overlay', ((e: CustomEvent<{ index: number }>) => {
 					const { index } = e.detail;
 					const list = annotations.get(index);
-					if (list) {
+					if (list && view) {
 						for (const annotation of list) {
 							view.addAnnotation(annotation);
 						}
 					}
-				});
+				}) as EventListener);
 
-				view.addEventListener('draw-annotation', (e: any) => {
+				view.addEventListener('draw-annotation', ((e: CustomEvent<{ draw: (fn: (range: Range) => SVGElement, options: Record<string, unknown>) => void; annotation: { color?: string } }>) => {
 					const { draw, annotation } = e.detail;
 					const { color } = annotation;
 					draw(Overlayer.highlight, { color });
-				});
+				}) as EventListener);
 
-				view.addEventListener('show-annotation', (e: any) => {
+				view.addEventListener('show-annotation', ((e: CustomEvent<{ value: unknown }>) => {
 					const annotation = annotationsByValue.get(e.detail.value);
-					if (annotation.note) alert(annotation.note);
-				});
+					if (annotation?.note) alert(annotation.note);
+				}) as EventListener);
 			}
 		} catch (e) {
 			console.error('Failed to load bookmarks:', e);
 		}
 	}
 
-	function handleLoad({ detail }: any) {
+	function handleLoad({ detail }: CustomEvent<{ doc: Document }>) {
 		const { doc } = detail;
 		doc.addEventListener('keydown', handleKeydown);
 	}
 
-	function handleRelocate({ detail }: any) {
+	function handleRelocate({ detail }: CustomEvent<{ fraction: number; location: { current: number }; tocItem?: { href?: string }; pageItem?: { label: string } }>) {
 		const { fraction: newFraction, location, tocItem, pageItem } = detail;
-
+		
 		// Update fraction - this will update the slider position
 		fraction = newFraction;
 
@@ -164,8 +173,6 @@
 		const percent = percentFormat.format(newFraction);
 		const loc = pageItem ? `Page ${pageItem.label}` : `Loc ${location.current}`;
 		progressTitle = `${percent} · ${loc}`;
-
-		showProgressSlider = true;
 
 		if (tocItem?.href) {
 			currentHref = tocItem.href;
@@ -181,24 +188,24 @@
 		}
 	}
 
-	function handleLayoutChange(event: CustomEvent) {
+	function handleLayoutChange(event: CustomEvent<{ value: string }>) {
 		selectedLayout = event.detail.value;
 		view?.renderer.setAttribute('flow', selectedLayout);
 	}
 
-	function handleTOCNavigate(event: CustomEvent) {
-		view?.goTo(event.detail.href).catch((e: any) => console.error(e));
+	function handleTOCNavigate(event: CustomEvent<{ href: string }>) {
+		view?.goTo(event.detail.href).catch((e: Error) => console.error(e));
 		showSideBar = false;
 	}
 
-	function handleSeek(event: CustomEvent) {
+	function handleSeek(event: CustomEvent<{ fraction: number }>) {
 		view?.goToFraction(event.detail.fraction);
 	}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="relative h-screen w-full">
+<div class="relative w-full h-screen">
 	{#if showDropTarget}
 		<DropTarget onopen={(e) => openBook(e.detail.file)} />
 	{/if}
@@ -222,5 +229,5 @@
 		<TOCView {toc} {currentHref} onnavigate={handleTOCNavigate} />
 	</SideBar>
 
-	<div class="h-full w-full" bind:this={viewContainer}></div>
+	<div class="w-full h-full" bind:this={viewContainer}></div>
 </div>
