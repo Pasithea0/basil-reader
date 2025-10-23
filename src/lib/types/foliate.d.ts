@@ -138,6 +138,26 @@ export interface ShowAnnotationEvent extends CustomEvent {
 	};
 }
 
+// Type declarations for foliate-js modules
+declare module '$lib/foliate-js/view.js' {
+	// This module is loaded dynamically at runtime
+	export {};
+}
+
+declare module '$lib/foliate-js/epubcfi.js' {
+	export function fromCalibreHighlight(bookmark: CalibreBookmark): string;
+	export function toEPUBCFI(range: Range): string;
+	// Add other exports as needed
+}
+
+declare module '$lib/foliate-js/overlayer.js' {
+	export class Overlayer {
+		static highlight(range: Range): SVGElement;
+		static underline(range: Range): SVGElement;
+		// Add other methods as needed
+	}
+}
+
 declare global {
 	interface HTMLElementTagNameMap {
 		'foliate-view': FoliateView;
