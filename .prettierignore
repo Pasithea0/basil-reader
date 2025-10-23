@@ -7,3 +7,9 @@ bun.lockb
 
 # Miscellaneous
 /static/
+
+# Build and vendor files
+node_modules/
+dist/
+build/
+src/lib/foliate-js/**
