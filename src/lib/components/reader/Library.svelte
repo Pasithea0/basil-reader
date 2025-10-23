@@ -8,9 +8,11 @@
 		getStorageInfo, 
 		formatBytes,
 		clearLibrary,
+		ALLOWED_FILE_TYPES_STRING,
+		FILE_TYPE_NAMES,
 		type StoredBook,
 		type StorageInfo 
-	} from '$lib/utils/library';
+	} from '$lib/utils/storage';
 
 	interface Props {
 		onOpenBook?: (book: StoredBook) => void;
@@ -22,6 +24,9 @@
 	let library = $state<StoredBook[]>([]);
 	let storageInfo = $state<StorageInfo>({ used: 0, total: 0, available: 0, usedPercent: 0 });
 	let showUploadModal = $state(false);
+	
+	// Generate supported formats text from constants
+	const supportedFormatsText = Object.values(FILE_TYPE_NAMES).join(', ');
 
 	async function updateLibraryData() {
 		library = await getLibrary();
@@ -91,7 +96,7 @@
 	type="file"
 	id="library-file-input"
 	onchange={handleFileInputChange}
-	accept=".epub,.mobi,.azw,.azw3,.fb2,.cbz,.pdf"
+	accept={ALLOWED_FILE_TYPES_STRING}
 	hidden
 />
 
@@ -220,7 +225,7 @@
 					<span>Choose File</span>
 				</button>
 					<p class="text-xs text-gray-500 dark:text-gray-500">
-						Supported formats: EPUB, MOBI, AZW, AZW3, FB2, CBZ, PDF
+						Supported formats: {supportedFormatsText}
 					</p>
 				</div>
 			</div>

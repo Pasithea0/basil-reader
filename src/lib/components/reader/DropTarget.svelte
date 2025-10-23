@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { BookOpen } from 'lucide-svelte';
+	import { ALLOWED_FILE_TYPES_STRING } from '$lib/utils/storage';
 
 	interface Props {
 		onopen?: (event: CustomEvent<{ file: File | FileSystemDirectoryHandle }>) => void;
@@ -62,7 +63,7 @@
 	type="file"
 	id="file-input"
 	onchange={handleFileInputChange}
-	accept=".epub,.mobi,.azw,.azw3,.fb2,.cbz,.pdf"
+	accept={ALLOWED_FILE_TYPES_STRING}
 	hidden
 />
 <div
