@@ -156,9 +156,12 @@
 
 	function handleRelocate({ detail }: any) {
 		const { fraction: newFraction, location, tocItem, pageItem } = detail;
+		
+		// Update fraction - this will update the slider position
 		fraction = newFraction;
 
-		const percent = percentFormat.format(fraction);
+		// Update title with percentage and location
+		const percent = percentFormat.format(newFraction);
 		const loc = pageItem ? `Page ${pageItem.label}` : `Loc ${location.current}`;
 		progressTitle = `${percent} · ${loc}`;
 
