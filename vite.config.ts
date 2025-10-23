@@ -9,10 +9,7 @@ function fixFoliateJs() {
 		transform(code: string, id: string) {
 			// Fix the glob pattern in pdf.js
 			if (id.includes('foliate-js/pdf.js')) {
-				return code.replace(
-					'`vendor/pdfjs/${path}`',
-					'`./vendor/pdfjs/${path}`'
-				);
+				return code.replace('`vendor/pdfjs/${path}`', '`./vendor/pdfjs/${path}`');
 			}
 		}
 	};

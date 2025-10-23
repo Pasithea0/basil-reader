@@ -10,7 +10,13 @@
 	import { percentFormat } from '$lib/utils/format';
 	import { getCSS } from '$lib/utils/css';
 	import { getBookById, type StoredBook } from '$lib/utils/library';
-	import { createFoliateView, extractBookMetadata, setupErrorHandling, loadCalibreBookmarks, type TOCItem } from '$lib/utils/bookLoader';
+	import {
+		createFoliateView,
+		extractBookMetadata,
+		setupErrorHandling,
+		loadCalibreBookmarks,
+		type TOCItem
+	} from '$lib/utils/bookLoader';
 	import type { FoliateView } from '$lib/types/foliate';
 
 	interface Props {
@@ -50,8 +56,14 @@
 	// Foliate view reference
 	let viewContainer: HTMLElement;
 	let view: FoliateView | null = null;
-	let annotations = new SvelteMap<number, Array<{ value: string; color?: string; note?: string }>>();
-	let annotationsByValue = new SvelteMap<string, { value: string; color?: string; note?: string }>();
+	let annotations = new SvelteMap<
+		number,
+		Array<{ value: string; color?: string; note?: string }>
+	>();
+	let annotationsByValue = new SvelteMap<
+		string,
+		{ value: string; color?: string; note?: string }
+	>();
 
 	// Loading state
 	let viewReady = $state(false);
@@ -81,18 +93,21 @@
 			if (loadedFileId !== bookId) {
 				loadedFileId = bookId;
 				isLoadingBook = true;
-				getBookById(initialBook.id).then((file) => {
-					if (file) {
-						return openBook(file);
-					} else {
-						throw new Error('Book not found in library');
-					}
-				}).catch((e) => {
-					console.error('Failed to load book:', e);
-					loadedFileId = null;
-				}).finally(() => {
-					isLoadingBook = false;
-				});
+				getBookById(initialBook.id)
+					.then((file) => {
+						if (file) {
+							return openBook(file);
+						} else {
+							throw new Error('Book not found in library');
+						}
+					})
+					.catch((e) => {
+						console.error('Failed to load book:', e);
+						loadedFileId = null;
+					})
+					.finally(() => {
+						isLoadingBook = false;
+					});
 			}
 		}
 	});
@@ -106,7 +121,7 @@
 		try {
 			// Create and initialize foliate view
 			view = await createFoliateView(viewContainer, file);
-			
+
 			// Set up event listeners
 			view.addEventListener('load', handleLoad as EventListener);
 			view.addEventListener('relocate', handleRelocate as EventListener);
@@ -156,14 +171,16 @@
 	/**
 	 * Event handler for navigation/location changes
 	 */
-	function handleRelocate({ detail }: CustomEvent<{ 
-		fraction: number; 
-		location: { current: number }; 
-		tocItem?: { href?: string }; 
-		pageItem?: { label: string } 
+	function handleRelocate({
+		detail
+	}: CustomEvent<{
+		fraction: number;
+		location: { current: number };
+		tocItem?: { href?: string };
+		pageItem?: { label: string };
 	}>) {
 		const { fraction: newFraction, location, tocItem, pageItem } = detail;
-		
+
 		// Update fraction - this will update the slider position
 		fraction = newFraction;
 
@@ -217,7 +234,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="relative w-full h-screen">
+<div class="relative h-screen w-full">
 	<HeaderBar visible={showToolbars} ontoggleSidebar={() => (showSideBar = true)} {onback}>
 		<Menu bind:selectedLayout onlayoutChange={handleLayoutChange} />
 	</HeaderBar>
@@ -239,10 +256,12 @@
 
 	<!-- Loading overlay -->
 	{#if isLoadingBook}
-		<div class="absolute inset-0 z-50 flex items-center justify-center bg-[Canvas]/80 backdrop-blur-sm">
+		<div
+			class="absolute inset-0 z-50 flex items-center justify-center bg-[Canvas]/80 backdrop-blur-sm"
+		>
 			<Spinner size="lg" text="Loading book..." />
 		</div>
 	{/if}
 
-	<div class="w-full h-full" bind:this={viewContainer}></div>
+	<div class="h-full w-full" bind:this={viewContainer}></div>
 </div>

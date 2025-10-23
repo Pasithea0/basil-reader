@@ -35,7 +35,7 @@ export function getFileFromInputEvent(e: Event): File | null {
 export function isValidBookFile(file: File): boolean {
 	const validExtensions = ['.epub', '.mobi', '.azw', '.azw3', '.fb2', '.cbz', '.pdf'];
 	const fileName = file.name.toLowerCase();
-	return validExtensions.some(ext => fileName.endsWith(ext));
+	return validExtensions.some((ext) => fileName.endsWith(ext));
 }
 
 /**

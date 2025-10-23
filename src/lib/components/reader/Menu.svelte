@@ -33,17 +33,17 @@
 		aria-label="Show settings"
 		aria-haspopup="true"
 		onclick={toggleMenu}
-		class="p-0.5 rounded-md bg-transparent border-0 text-gray-500 hover:bg-black/10 hover:text-current"
+		class="rounded-md border-0 bg-transparent p-0.5 text-gray-500 hover:bg-black/10 hover:text-current"
 	>
 		<Settings class="block h-6 w-6" strokeWidth={2} />
 	</button>
 	<ul
 		role="menu"
-		class="absolute right-0 bg-[Canvas] text-[CanvasText] rounded-md shadow-[0_0_0_1px_rgba(0,0,0,0.2),0_0_16px_rgba(0,0,0,0.1)] p-1.5 cursor-default list-none m-0 {show
+		class="absolute right-0 m-0 cursor-default list-none rounded-md bg-[Canvas] p-1.5 text-[CanvasText] shadow-[0_0_0_1px_rgba(0,0,0,0.2),0_0_16px_rgba(0,0,0,0.1)] {show
 			? 'visible'
 			: 'invisible'}"
 	>
-		<li role="presentation" class="px-3 py-1.5 rounded-md">
+		<li role="presentation" class="rounded-md px-3 py-1.5">
 			<strong>Layout</strong>
 		</li>
 		<li role="none">
@@ -53,9 +53,9 @@
 				aria-checked={selectedLayout === 'paginated'}
 				onclick={() => selectLayout('paginated')}
 				onkeydown={(e) => handleKeyDown(e, 'paginated')}
-				class="w-full text-left px-3 py-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer flex items-center gap-2 bg-transparent border-0"
+				class="flex w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-3 py-1.5 text-left hover:bg-black/5 dark:hover:bg-white/10"
 			>
-				<span class="w-4 h-4 flex items-center justify-center">
+				<span class="flex h-4 w-4 items-center justify-center">
 					{#if selectedLayout === 'paginated'}
 						<Circle class="h-4 w-4" fill="currentColor" strokeWidth={0} />
 					{/if}
@@ -70,9 +70,9 @@
 				aria-checked={selectedLayout === 'scrolled'}
 				onclick={() => selectLayout('scrolled')}
 				onkeydown={(e) => handleKeyDown(e, 'scrolled')}
-				class="w-full text-left px-3 py-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer flex items-center gap-2 bg-transparent border-0"
+				class="flex w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-3 py-1.5 text-left hover:bg-black/5 dark:hover:bg-white/10"
 			>
-				<span class="w-4 h-4 flex items-center justify-center">
+				<span class="flex h-4 w-4 items-center justify-center">
 					{#if selectedLayout === 'scrolled'}
 						<Circle class="h-4 w-4" fill="currentColor" strokeWidth={0} />
 					{/if}

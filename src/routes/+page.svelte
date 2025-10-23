@@ -29,9 +29,5 @@
 		<Library onOpenBook={handleOpenBook} />
 	{/key}
 {:else}
-	<Reader 
-		bind:onTitleChange={bookTitle} 
-		onback={handleBackToLibrary} 
-		initialBook={selectedBook}
-	/>
+	<Reader bind:onTitleChange={bookTitle} onback={handleBackToLibrary} initialBook={selectedBook} />
 {/if}

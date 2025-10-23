@@ -78,8 +78,10 @@ export async function extractBookMetadata(view: FoliateView): Promise<BookMetada
  */
 export function setupErrorHandling(view: FoliateView): void {
 	const { book } = view;
-	
-	book.transformTarget?.addEventListener('data', (({ detail }: CustomEvent<{ data: Promise<unknown>; name: string }>) => {
+
+	book.transformTarget?.addEventListener('data', (({
+		detail
+	}: CustomEvent<{ data: Promise<unknown>; name: string }>) => {
 		detail.data = Promise.resolve(detail.data).catch((e: Error) => {
 			console.error(new Error(`Failed to load ${detail.name}`, { cause: e }));
 			return '';
@@ -94,7 +96,7 @@ export function setupErrorHandling(view: FoliateView): void {
 export async function extractMetadataFromFile(file: File): Promise<BookMetadata> {
 	// Ensure foliate-js view module is loaded
 	await import('$lib/foliate-js/view.js');
-	
+
 	// Create a temporary container for metadata extraction
 	const tempContainer = document.createElement('div');
 	tempContainer.style.display = 'none';
@@ -104,10 +106,10 @@ export async function extractMetadataFromFile(file: File): Promise<BookMetadata>
 		// Create a temporary view to extract metadata
 		const view = await createFoliateView(tempContainer, file);
 		const metadata = await extractBookMetadata(view);
-		
+
 		// Clean up
 		tempContainer.remove();
-		
+
 		return metadata;
 	} catch (e) {
 		// Clean up on error
@@ -127,7 +129,7 @@ export async function loadCalibreBookmarks(
 	try {
 		const { book } = view;
 		const bookmarks = await book.getCalibreBookmarks?.();
-		
+
 		if (!bookmarks) return;
 
 		const { fromCalibreHighlight } = await import('$lib/foliate-js/epubcfi.js');
@@ -158,7 +160,12 @@ export async function loadCalibreBookmarks(
 			}
 		}) as EventListener);
 
-		view.addEventListener('draw-annotation', ((e: CustomEvent<{ draw: (fn: (range: Range) => SVGElement, options: Record<string, unknown>) => void; annotation: { color?: string } }>) => {
+		view.addEventListener('draw-annotation', ((
+			e: CustomEvent<{
+				draw: (fn: (range: Range) => SVGElement, options: Record<string, unknown>) => void;
+				annotation: { color?: string };
+			}>
+		) => {
 			const { draw, annotation } = e.detail;
 			const { color } = annotation;
 			draw(Overlayer.highlight, { color });

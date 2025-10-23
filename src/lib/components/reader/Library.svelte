@@ -3,21 +3,21 @@
 	import { Plus, BookOpen, X, Upload, Trash2 } from 'lucide-svelte';
 	import BookItem from './BookItem.svelte';
 	import Spinner from './Spinner.svelte';
-	import { 
-		getLibrary, 
-		removeBookFromLibrary, 
-		getStorageInfo, 
+	import {
+		getLibrary,
+		removeBookFromLibrary,
+		getStorageInfo,
 		formatBytes,
 		clearLibrary,
 		addBookToLibrary,
 		type StoredBook,
-		type StorageInfo 
+		type StorageInfo
 	} from '$lib/utils/library';
-	import { 
-		getFileFromDragEvent, 
-		triggerFileInput, 
+	import {
+		getFileFromDragEvent,
+		triggerFileInput,
 		getFileFromInputEvent,
-		SUPPORTED_BOOK_FORMATS 
+		SUPPORTED_BOOK_FORMATS
 	} from '$lib/utils/fileHandler';
 	import { extractMetadataFromFile } from '$lib/utils/bookLoader';
 
@@ -70,8 +70,12 @@
 	 */
 	async function handleClearLibrary() {
 		if (library.length === 0) return;
-		
-		if (confirm(`Are you sure you want to remove all ${library.length} book${library.length === 1 ? '' : 's'} from your library?\n\nThis action cannot be undone.`)) {
+
+		if (
+			confirm(
+				`Are you sure you want to remove all ${library.length} book${library.length === 1 ? '' : 's'} from your library?\n\nThis action cannot be undone.`
+			)
+		) {
 			await clearLibrary();
 			await updateLibraryData();
 		}
@@ -102,23 +106,23 @@
 		try {
 			// Extract metadata from the file
 			const metadata = await extractMetadataFromFile(file);
-			
+
 			// Save to library
 			await addBookToLibrary(file, metadata);
-			
+
 			// Refresh library
 			await updateLibraryData();
-			
+
 			console.log('Book imported successfully:', metadata.title);
 		} catch (e) {
 			console.error('Failed to import book:', e);
 			const errorMsg = (e as Error).message;
-			
+
 			// Show error message
 			alert(
 				`⚠️ Failed to import book\n\n` +
-				`${errorMsg}\n\n` +
-				`Please try again or check if you have enough storage space.`
+					`${errorMsg}\n\n` +
+					`Please try again or check if you have enough storage space.`
 			);
 		} finally {
 			isImporting = false;
@@ -175,7 +179,9 @@
 <div class="relative h-screen w-full overflow-auto">
 	<!-- Importing overlay -->
 	{#if isImporting}
-		<div class="fixed inset-0 z-50 flex items-center justify-center bg-[Canvas]/80 backdrop-blur-sm">
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-[Canvas]/80 backdrop-blur-sm"
+		>
 			<Spinner size="lg" text="Importing {importingFileName}..." />
 		</div>
 	{/if}
@@ -187,7 +193,7 @@
 			<div class="flex items-center gap-2">
 				<button
 					onclick={handleClearLibrary}
-					class="rounded-md border-0 bg-transparent p-2 text-gray-500 transition-colors hover:bg-black/10 hover:text-current disabled:opacity-30 disabled:cursor-not-allowed"
+					class="rounded-md border-0 bg-transparent p-2 text-gray-500 transition-colors hover:bg-black/10 hover:text-current disabled:cursor-not-allowed disabled:opacity-30"
 					disabled={library.length === 0}
 					aria-label="Clear all books"
 				>
@@ -203,11 +209,12 @@
 				</button>
 			</div>
 		</div>
-		
+
 		<!-- Storage info -->
 		<div class="mt-3 flex items-center gap-3">
 			<p class="text-sm text-gray-600 dark:text-gray-400">
-				{library.length} {library.length === 1 ? 'book' : 'books'}
+				{library.length}
+				{library.length === 1 ? 'book' : 'books'}
 			</p>
 			{#if storageInfo.total > 0}
 				<div class="h-1 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
@@ -235,7 +242,7 @@
 					onremove={() => handleRemoveBook(book.id)}
 				/>
 			{/each}
-			
+
 			{#if library.length === 0}
 				<!-- Empty state drop zone -->
 				<div
@@ -247,7 +254,9 @@
 					onclick={handleFileButtonClick}
 					onkeydown={(e) => e.key === 'Enter' && handleFileButtonClick()}
 				>
-					<div class="relative mb-3 flex aspect-2/3 w-full flex-col items-center justify-center overflow-hidden rounded-lg border-4 border-dashed border-gray-300 bg-gray-50 shadow-lg transition-colors hover:border-blue-400 hover:bg-blue-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:border-blue-500 dark:hover:bg-gray-700">
+					<div
+						class="relative mb-3 flex aspect-2/3 w-full flex-col items-center justify-center overflow-hidden rounded-lg border-4 border-dashed border-gray-300 bg-gray-50 shadow-lg transition-colors hover:border-blue-400 hover:bg-blue-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:border-blue-500 dark:hover:bg-gray-700"
+					>
 						<BookOpen class="h-16 w-16 text-gray-400 dark:text-gray-500" strokeWidth={2} />
 						<p class="mt-4 px-4 text-center text-sm font-medium text-gray-600 dark:text-gray-400">
 							Drop to upload<br />or click to select
@@ -278,7 +287,7 @@
 		>
 			<button
 				onclick={() => (showUploadModal = false)}
-				class="absolute right-4 top-4 rounded-lg border-0 bg-transparent p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
+				class="absolute top-4 right-4 rounded-lg border-0 bg-transparent p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
 				aria-label="Close"
 			>
 				<X class="h-6 w-6" strokeWidth={2} />
@@ -293,7 +302,7 @@
 					Drop your book file here or choose from your device
 				</p>
 
-				<div class="mt-8 flex flex-col gap-3 w-full">
+				<div class="mt-8 flex w-full flex-col gap-3">
 					<button
 						onclick={handleFileButtonClick}
 						class="flex items-center justify-center gap-2 rounded-lg border-0 bg-blue-500 px-6 py-3 font-semibold text-white shadow-md transition-colors hover:bg-blue-600"

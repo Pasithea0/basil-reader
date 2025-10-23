@@ -25,15 +25,21 @@
 <div class="flex flex-col items-center justify-center gap-3">
 	<div class="relative">
 		<!-- Outer ring -->
-		<div class="absolute inset-0 rounded-full border-2 border-gray-200 dark:border-gray-700 {sizeClasses[size]}"></div>
-		
+		<div
+			class="absolute inset-0 rounded-full border-2 border-gray-200 dark:border-gray-700 {sizeClasses[
+				size
+			]}"
+		></div>
+
 		<!-- Spinning ring -->
-		<div 
-			class="rounded-full border-2 border-transparent border-t-current animate-spin {sizeClasses[size]} {color}"
+		<div
+			class="animate-spin rounded-full border-2 border-transparent border-t-current {sizeClasses[
+				size
+			]} {color}"
 			style="animation-duration: 1s;"
 		></div>
 	</div>
-	
+
 	{#if text}
 		<p class="text-gray-600 dark:text-gray-400 {textSizeClasses[size]} font-medium">
 			{text}

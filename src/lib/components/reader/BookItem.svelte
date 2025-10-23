@@ -15,8 +15,8 @@
 </script>
 
 <div
-    role="button"
-    tabindex="0"
+	role="button"
+	tabindex="0"
 	class="group relative cursor-pointer"
 	onmouseenter={() => (showRemoveButton = true)}
 	onmouseleave={() => (showRemoveButton = false)}
@@ -25,7 +25,9 @@
 		onclick={() => onclick?.()}
 		class="w-full border-0 bg-transparent p-0 text-left transition-transform hover:scale-105"
 	>
-		<div class="relative mb-3 aspect-2/3 w-full overflow-hidden rounded-lg bg-gray-200 shadow-lg dark:bg-gray-700">
+		<div
+			class="relative mb-3 aspect-2/3 w-full overflow-hidden rounded-lg bg-gray-200 shadow-lg dark:bg-gray-700"
+		>
 			{#if book.coverUrl}
 				<img src={book.coverUrl} alt="{book.title} cover" class="h-full w-full object-cover" />
 			{:else}
@@ -47,11 +49,10 @@
 				e.stopPropagation();
 				onremove?.();
 			}}
-			class="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-red-500 text-white shadow-lg transition-opacity hover:bg-red-600"
+			class="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-red-500 text-white shadow-lg transition-opacity hover:bg-red-600"
 			aria-label="Remove book"
 		>
 			<X class="h-5 w-5" strokeWidth={2} />
 		</button>
 	{/if}
 </div>
-

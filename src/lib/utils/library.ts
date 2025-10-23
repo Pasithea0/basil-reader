@@ -43,23 +43,21 @@ interface StoredBookData {
  */
 export async function getLibrary(): Promise<StoredBook[]> {
 	const bookDataList = await getAllRecords<StoredBookData>();
-	
+
 	const books: StoredBook[] = bookDataList
-		.map(bookData => {
+		.map((bookData) => {
 			let coverUrl: string | undefined = undefined;
-			
+
 			// Safely create object URL for cover
 			try {
 				if (bookData.cover) {
-					const blob = bookData.cover instanceof Blob 
-						? bookData.cover 
-						: new Blob([bookData.cover]);
+					const blob = bookData.cover instanceof Blob ? bookData.cover : new Blob([bookData.cover]);
 					coverUrl = URL.createObjectURL(blob);
 				}
 			} catch (e) {
 				// Silently fail - book will show without cover
 			}
-			
+
 			return {
 				id: bookData.id,
 				title: bookData.title,
@@ -72,7 +70,7 @@ export async function getLibrary(): Promise<StoredBook[]> {
 			};
 		})
 		.sort((a, b) => b.addedAt - a.addedAt); // Sort by date, newest first
-	
+
 	return books;
 }
 
@@ -86,11 +84,11 @@ export async function addBookToLibrary(
 	// Check storage quota before saving
 	const storageInfo = await getStorageInfo();
 	const estimatedSize = file.size + (metadata.cover?.size || 0);
-	
+
 	if (estimatedSize > storageInfo.available) {
 		throw new Error(
 			`Not enough storage space. Need ${formatBytes(estimatedSize)}, ` +
-			`but only ${formatBytes(storageInfo.available)} available.`
+				`but only ${formatBytes(storageInfo.available)} available.`
 		);
 	}
 
@@ -135,11 +133,11 @@ export async function removeBookFromLibrary(bookId: string): Promise<void> {
  */
 export async function getBookById(bookId: string): Promise<File | null> {
 	const bookData = await getRecord<StoredBookData>(bookId);
-	
+
 	if (bookData) {
 		return new File([bookData.file], bookData.fileName, { type: bookData.fileType });
 	}
-	
+
 	return null;
 }
 

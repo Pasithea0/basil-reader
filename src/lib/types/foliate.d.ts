@@ -78,7 +78,11 @@ export interface FoliateView extends HTMLElement {
 	addAnnotation(annotation: Annotation): void;
 	book: FoliateBook;
 	renderer: FoliateRenderer;
-	addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+	addEventListener(
+		type: string,
+		listener: EventListenerOrEventListenerObject,
+		options?: boolean | AddEventListenerOptions
+	): void;
 }
 
 export interface FoliateRenderer extends HTMLElement {
