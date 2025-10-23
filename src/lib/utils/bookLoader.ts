@@ -94,28 +94,16 @@ export function setupErrorHandling(view: FoliateView): void {
  * This is useful for importing books to the library without immediately reading them
  */
 export async function extractMetadataFromFile(file: File): Promise<BookMetadata> {
-	// Ensure foliate-js view module is loaded
-	await import('$lib/foliate-js/view.js');
-
-	// Create a temporary container for metadata extraction
-	const tempContainer = document.createElement('div');
-	tempContainer.style.display = 'none';
-	document.body.appendChild(tempContainer);
-
-	try {
-		// Create a temporary view to extract metadata
-		const view = await createFoliateView(tempContainer, file);
-		const metadata = await extractBookMetadata(view);
-
-		// Clean up
-		tempContainer.remove();
-
-		return metadata;
-	} catch (e) {
-		// Clean up on error
-		tempContainer.remove();
-		throw e;
-	}
+    // Lightweight extraction to avoid streaming the file during import.
+    // Derive minimal metadata from filename only. Full metadata/cover will
+    // be extracted after opening in the reader to avoid unnecessary reads.
+    const titleFromName = file.name.replace(/\.[^.]+$/, '').trim() || 'Untitled Book';
+    return {
+        title: titleFromName,
+        author: '',
+        dir: 'ltr',
+        toc: [],
+    };
 }
 
 /**
@@ -150,7 +138,8 @@ export async function loadCalibreBookmarks(
 		}
 
 		// Set up annotation event listeners
-		view.addEventListener('create-overlay', ((e: CustomEvent<{ index: number }>) => {
+    // Align with foliate-js README: use 'create-overlayer'
+    view.addEventListener('create-overlayer', ((e: CustomEvent<{ index: number }>) => {
 			const { index } = e.detail;
 			const list = annotations.get(index);
 			if (list) {

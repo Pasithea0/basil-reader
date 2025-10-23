@@ -1,6 +1,8 @@
 <script lang="ts">
 	import '../app.css';
 	import { base } from '$app/paths';
+	// Load foliate-js once at app entry, per foliate-js README
+	import '$lib/foliate-js/view.js';
 
 	let { children } = $props();
 </script>

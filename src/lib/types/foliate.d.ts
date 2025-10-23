@@ -129,6 +129,15 @@ export interface CreateOverlayEvent extends CustomEvent {
 	};
 }
 
+// Preferred event name per foliate-js README
+export interface CreateOverlayerEvent extends CustomEvent {
+    detail: {
+        doc: Document;
+        index: number;
+        attach: (overlay: { element: HTMLElement; redraw: () => void }) => void;
+    };
+}
+
 export interface DrawAnnotationEvent extends CustomEvent {
 	detail: {
 		draw: (fn: (range: Range) => SVGElement, options: Record<string, unknown>) => void;
