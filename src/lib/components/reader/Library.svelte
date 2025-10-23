@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Plus, BookOpen, X, Upload } from 'lucide-svelte';
+	import { Plus, BookOpen, X, Upload, Trash2 } from 'lucide-svelte';
 	import BookItem from './BookItem.svelte';
 	import { 
 		getLibrary, 
 		removeBookFromLibrary, 
 		getStorageInfo, 
 		formatBytes,
+		clearLibrary,
 		type StoredBook,
 		type StorageInfo 
 	} from '$lib/utils/library';
@@ -38,6 +39,15 @@
 	function handleRemoveBook(bookId: string) {
 		if (confirm('Are you sure you want to remove this book from your library?')) {
 			removeBookFromLibrary(bookId);
+			updateLibraryData();
+		}
+	}
+
+	function handleClearLibrary() {
+		if (library.length === 0) return;
+		
+		if (confirm(`Are you sure you want to remove all ${library.length} book${library.length === 1 ? '' : 's'} from your library?\n\nThis action cannot be undone.`)) {
+			clearLibrary();
 			updateLibraryData();
 		}
 	}
@@ -90,14 +100,24 @@
 	<div class="sticky top-0 z-10 bg-[Canvas] px-6 py-4 shadow-sm">
 		<div class="flex items-center justify-between">
 			<h1 class="text-3xl font-black text-[CanvasText]">My Library</h1>
-			<button
-				onclick={handleAddBookClick}
-				class="flex items-center gap-2 rounded-lg border-0 bg-blue-500 px-4 py-2 font-semibold text-white shadow-md transition-colors hover:bg-blue-600"
-				aria-label="Upload book"
-			>
-				<Plus class="h-5 w-5" strokeWidth={2} />
-				<span>Add Book</span>
-			</button>
+			<div class="flex items-center gap-2">
+				<button
+					onclick={handleClearLibrary}
+					class="rounded-md border-0 bg-transparent p-2 text-gray-500 transition-colors hover:bg-black/10 hover:text-current disabled:opacity-30 disabled:cursor-not-allowed"
+					disabled={library.length === 0}
+					aria-label="Clear all books"
+				>
+					<Trash2 class="h-6 w-6" strokeWidth={2} />
+				</button>
+				<button
+					onclick={handleAddBookClick}
+					class="flex items-center gap-2 rounded-lg border-0 bg-blue-500 px-4 py-2 font-semibold text-white shadow-md transition-colors hover:bg-blue-600"
+					aria-label="Upload book"
+				>
+					<Plus class="h-5 w-5" strokeWidth={2} />
+					<span>Add Book</span>
+				</button>
+			</div>
 		</div>
 		<div class="mt-3 flex items-center gap-3">
 			<p class="text-sm text-gray-600 dark:text-gray-400">
