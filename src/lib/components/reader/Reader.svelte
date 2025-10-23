@@ -9,23 +9,23 @@
 	import { formatLanguageMap, formatContributor, percentFormat } from '$lib/utils/format';
 	import { getCSS } from '$lib/utils/css';
 
-	let showDropTarget = true;
-	let showSideBar = false;
-	let showToolbars = false;
-	let showProgressSlider = false;
+	let showDropTarget = $state(true);
+	let showSideBar = $state(false);
+	let showToolbars = $state(false);
+	let showProgressSlider = $state(false);
 
 	// Book metadata
-	let bookTitle = 'Untitled Book';
-	let bookAuthor = '';
-	let bookCover = '';
-	let bookDir = 'ltr';
-	let toc: any[] = [];
-	let currentHref = '';
+	let bookTitle = $state('Untitled Book');
+	let bookAuthor = $state('');
+	let bookCover = $state('');
+	let bookDir = $state('ltr');
+	let toc: any[] = $state([]);
+	let currentHref = $state('');
 
 	// Navigation state
-	let fraction = 0;
-	let progressTitle = '';
-	let sectionFractions: number[] = [];
+	let fraction = $state(0);
+	let progressTitle = $state('');
+	let sectionFractions: number[] = $state([]);
 
 	// Reader settings
 	let style = {
@@ -34,7 +34,7 @@
 		hyphenate: true
 	};
 
-	let selectedLayout = 'paginated';
+	let selectedLayout = $state('paginated');
 
 	// Foliate view reference
 	let viewContainer: HTMLElement;
@@ -193,62 +193,31 @@
 	}
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
-<div class="reader-container">
+<div class="relative w-full h-screen">
 	{#if showDropTarget}
 		<DropTarget onopen={(e) => openBook(e.detail.file)} />
 	{/if}
 
-	<HeaderBar visible={showToolbars} on:toggle-sidebar={() => (showSideBar = true)}>
-		<Menu slot="menu" bind:selectedLayout on:layout-change={handleLayoutChange} />
+	<HeaderBar visible={showToolbars} ontoggleSidebar={() => (showSideBar = true)}>
+		<Menu bind:selectedLayout onlayoutChange={handleLayoutChange} />
 	</HeaderBar>
 
 	<NavBar
 		visible={showToolbars}
 		{fraction}
-		{bookDir}
+		dir={bookDir}
 		title={progressTitle}
 		{sectionFractions}
-		on:go-left={() => view?.goLeft()}
-		on:go-right={() => view?.goRight()}
-		on:seek={handleSeek}
+		ongoLeft={() => view?.goLeft()}
+		ongoRight={() => view?.goRight()}
+		onseek={handleSeek}
 	/>
 
 	<SideBar bind:show={showSideBar} title={bookTitle} author={bookAuthor} coverSrc={bookCover}>
-		<TOCView {toc} {currentHref} on:navigate={handleTOCNavigate} />
+		<TOCView {toc} {currentHref} onnavigate={handleTOCNavigate} />
 	</SideBar>
 
-	<div class="view-container" bind:this={viewContainer}></div>
+	<div class="w-full h-full" bind:this={viewContainer}></div>
 </div>
-
-<style>
-	:global(:root) {
-		--active-bg: rgba(0, 0, 0, 0.05);
-	}
-	@supports (color-scheme: light dark) {
-		@media (prefers-color-scheme: dark) {
-			:global(:root) {
-				--active-bg: rgba(255, 255, 255, 0.1);
-			}
-		}
-	}
-	:global(html) {
-		height: 100%;
-	}
-	:global(body) {
-		margin: 0 auto;
-		height: 100%;
-		font: menu;
-		font-family: system-ui, sans-serif;
-	}
-	.reader-container {
-		position: relative;
-		width: 100%;
-		height: 100vh;
-	}
-	.view-container {
-		width: 100%;
-		height: 100%;
-	}
-</style>

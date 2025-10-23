@@ -1,119 +1,53 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	interface Props {
+		show?: boolean;
+		title?: string;
+		author?: string;
+		coverSrc?: string;
+		onclose?: () => void;
+		children?: any;
+	}
 
-	export let show = false;
-	export let title = '';
-	export let author = '';
-	export let coverSrc = '';
-
-	const dispatch = createEventDispatcher();
+	let { show = $bindable(false), title = '', author = '', coverSrc = '', onclose, children }: Props = $props();
 
 	function closeSideBar() {
-		dispatch('close');
+		show = false;
+		onclose?.();
 	}
 </script>
 
-<div class="dimming-overlay" class:show on:click={closeSideBar} aria-hidden="true"></div>
-<div class="side-bar" class:show>
-	<div class="side-bar-header">
+<!-- Dimming overlay -->
+<div
+	class="fixed inset-0 z-20 bg-black/20 transition-opacity duration-300 {show
+		? 'visible opacity-100'
+		: 'invisible opacity-0'}"
+	onclick={closeSideBar}
+	aria-hidden="true"
+></div>
+
+<!-- Sidebar -->
+<div
+	class="fixed top-0 left-0 h-full w-80 z-20 flex flex-col bg-[Canvas] text-[CanvasText] shadow-[0_0_0_1px_rgba(0,0,0,0.2),0_0_40px_rgba(0,0,0,0.2)] transition-transform duration-300 {show
+		? 'translate-x-0'
+		: '-translate-x-80'}"
+>
+	<!-- Header with cover and metadata -->
+	<div class="p-4 flex border-b border-black/10 dark:border-white/10 items-center">
 		{#if coverSrc}
-			<img src={coverSrc} alt="Book cover" class="side-bar-cover" />
+			<img
+				src={coverSrc}
+				alt="Book cover"
+				class="h-[10vh] min-h-[60px] max-h-[180px] rounded-sm bg-gray-300 shadow-[0_0_1px_rgba(0,0,0,0.1),0_0_16px_rgba(0,0,0,0.1)] mr-4"
+			/>
 		{/if}
 		<div>
-			<h1 class="side-bar-title">{title}</h1>
-			<p class="side-bar-author">{author}</p>
+			<h1 class="my-2 text-base">{title}</h1>
+			<p class="my-2 text-sm text-gray-500">{author}</p>
 		</div>
 	</div>
-	<div class="toc-view">
-		<slot />
+
+	<!-- TOC container -->
+	<div class="p-2 overflow-y-auto">
+		{@render children?.()}
 	</div>
 </div>
-
-<style>
-	:root {
-		--active-bg: rgba(0, 0, 0, 0.05);
-	}
-	@supports (color-scheme: light dark) {
-		@media (prefers-color-scheme: dark) {
-			:root {
-				--active-bg: rgba(255, 255, 255, 0.1);
-			}
-		}
-	}
-	.side-bar {
-		visibility: hidden;
-		box-sizing: border-box;
-		position: absolute;
-		z-index: 2;
-		top: 0;
-		left: 0;
-		height: 100%;
-		width: 320px;
-		transform: translateX(-320px);
-		display: flex;
-		flex-direction: column;
-		background: Canvas;
-		color: CanvasText;
-		box-shadow:
-			0 0 0 1px rgba(0, 0, 0, 0.2),
-			0 0 40px rgba(0, 0, 0, 0.2);
-		transition:
-			visibility 0s linear 300ms,
-			transform 300ms ease;
-	}
-	.side-bar.show {
-		visibility: visible;
-		transform: translateX(0);
-		transition-delay: 0s;
-	}
-	.dimming-overlay {
-		visibility: hidden;
-		position: fixed;
-		z-index: 2;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background: rgba(0, 0, 0, 0.2);
-		opacity: 0;
-		transition:
-			visibility 0s linear 300ms,
-			opacity 300ms ease;
-	}
-	.dimming-overlay.show {
-		visibility: visible;
-		opacity: 1;
-		transition-delay: 0s;
-	}
-	.side-bar-header {
-		padding: 1rem;
-		display: flex;
-		border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-		align-items: center;
-	}
-	.side-bar-cover {
-		height: 10vh;
-		min-height: 60px;
-		max-height: 180px;
-		border-radius: 3px;
-		border: 0;
-		background: lightgray;
-		box-shadow:
-			0 0 1px rgba(0, 0, 0, 0.1),
-			0 0 16px rgba(0, 0, 0, 0.1);
-		margin-inline-end: 1rem;
-	}
-	.side-bar-title {
-		margin: 0.5rem 0;
-		font-size: inherit;
-	}
-	.side-bar-author {
-		margin: 0.5rem 0;
-		font-size: small;
-		color: GrayText;
-	}
-	.toc-view {
-		padding: 0.5rem;
-		overflow-y: scroll;
-	}
-</style>
