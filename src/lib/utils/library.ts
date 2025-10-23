@@ -4,14 +4,14 @@
  */
 
 import {
-	getAllRecords,
-	getRecord,
-	saveRecord,
-	deleteRecord,
-	clearAllRecords,
-	getStorageInfo as getStorageInfoFromStorage,
-	formatBytes as formatBytesFromStorage,
-	generateId
+    getAllRecords,
+    getRecord,
+    saveRecord,
+    deleteRecord,
+    clearAllRecords,
+    getStorageInfo as getStorageInfoFromStorage,
+    formatBytes as formatBytesFromStorage,
+    generateId
 } from './storage';
 import type { StorageInfo } from './storage';
 
@@ -26,6 +26,15 @@ export interface StoredBook {
 	addedAt: number;
 }
 
+export interface BookProgress {
+    page?: number;
+    totalPages?: number;
+    fraction?: number; // 0..1 across the whole book
+    href?: string; // last TOC href if available
+    cfi?: string; // EPUB CFI location if available
+    updatedAt: number;
+}
+
 interface StoredBookData {
 	id: string;
 	title: string;
@@ -36,6 +45,8 @@ interface StoredBookData {
 	fileType: string;
 	fileSize: number;
 	addedAt: number;
+    // optional persisted reading progress
+    progress?: BookProgress;
 }
 
 /**
@@ -140,6 +151,34 @@ export async function getBookById(bookId: string): Promise<File | null> {
 	}
 
 	return null;
+}
+
+/**
+ * Persists reading progress for a given book
+ */
+export async function saveBookProgress(bookId: string, progress: BookProgress): Promise<void> {
+    const record = await getRecord<StoredBookData>(bookId);
+    if (!record) return;
+    // Only update if something changed or it's newer
+    const prev = record.progress;
+    const changed =
+        !prev ||
+        prev.page !== progress.page ||
+        prev.totalPages !== progress.totalPages ||
+        prev.href !== progress.href ||
+        prev.cfi !== progress.cfi ||
+        (typeof progress.fraction === 'number' && progress.fraction !== prev.fraction);
+    if (!changed && prev && progress.updatedAt <= prev.updatedAt) return;
+    record.progress = progress;
+    await saveRecord(record);
+}
+
+/**
+ * Returns persisted reading progress for a given book, if any
+ */
+export async function getBookProgress(bookId: string): Promise<BookProgress | null> {
+    const record = await getRecord<StoredBookData>(bookId);
+    return record?.progress ?? null;
 }
 
 /**

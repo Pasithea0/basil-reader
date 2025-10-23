@@ -8,7 +8,7 @@
 	import Spinner from './Spinner.svelte';
 	import { percentFormat } from '$lib/utils/format';
 	import { getCSS } from '$lib/utils/css';
-	import { getBookById, type StoredBook } from '$lib/utils/library';
+import { getBookById, type StoredBook } from '$lib/utils/library';
 	import {
 		createFoliateView,
 		extractBookMetadata,
@@ -16,7 +16,8 @@
 		loadCalibreBookmarks,
 		type TOCItem
 	} from '$lib/utils/bookLoader';
-	import type { FoliateView } from '$lib/types/foliate';
+    import type { FoliateView } from '$lib/types/foliate';
+    import { getBookProgress, saveBookProgress } from '$lib/utils/library';
 
 	interface Props {
 		onTitleChange?: string;
@@ -57,7 +58,8 @@
 
 	// Foliate view reference
 	let viewContainer: HTMLElement;
-	let view: FoliateView | null = null;
+    let view: FoliateView | null = null;
+    let currentDoc: Document | null = null;
 	let annotations = new SvelteMap<
 		number,
 		Array<{ value: string; color?: string; note?: string }>
@@ -122,14 +124,7 @@
 		try {
             // Clean up any existing view before creating a new one
             if (view) {
-                try {
-                    view.removeEventListener('load', handleLoad as EventListener);
-                    view.removeEventListener('relocate', handleRelocate as EventListener);
-                } catch {}
-                try {
-                    view.remove();
-                } catch {}
-                view = null;
+                cleanupView();
             }
 
 			// Create and initialize foliate view
@@ -139,8 +134,8 @@
 			view.addEventListener('load', handleLoad as EventListener);
 			view.addEventListener('relocate', handleRelocate as EventListener);
 
-			// Set up error handling
-			setupErrorHandling(view);
+            // Set up error handling
+            const removeErrorHandler = setupErrorHandling(view);
 
 			// Extract metadata
 			const metadata = await extractBookMetadata(view);
@@ -159,11 +154,40 @@
 			view.renderer.setAttribute('flow', selectedLayout);
 			view.renderer.next();
 
-			// Get section fractions for navigation
-			sectionFractions = Array.from(view.getSectionFractions());
+            // Get section fractions for navigation
+            sectionFractions = Array.from(view.getSectionFractions());
+
+            // Attempt to restore previous reading position
+            if (initialBook) {
+                try {
+                    const progress = await getBookProgress(initialBook.id);
+                    if (progress) {
+                        if (progress.href) {
+                            await view.goTo(progress.href).catch((e: Error) => console.error(e));
+                        } else if (typeof progress.fraction === 'number') {
+                            const f = Math.min(1, Math.max(0, progress.fraction));
+                            view.goToFraction(f);
+                        } else if (
+                            typeof progress.page === 'number' &&
+                            typeof progress.totalPages === 'number' &&
+                            progress.totalPages > 0
+                        ) {
+                            const f = Math.min(1, Math.max(0, (progress.page - 1) / progress.totalPages));
+                            view.goToFraction(f);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to restore reading position:', e);
+                }
+            }
 
 			// Load Calibre bookmarks if available
-			await loadCalibreBookmarks(view, annotations, annotationsByValue);
+            const removeBookmarkHandlers = await loadCalibreBookmarks(view, annotations, annotationsByValue);
+            // Ensure these are removed on cleanup
+            teardownCallbacks.push(() => {
+                try { removeErrorHandler(); } catch {}
+                try { removeBookmarkHandlers(); } catch {}
+            });
 		} catch (e) {
 			console.error('Failed to open book:', e);
 			throw e;
@@ -174,8 +198,9 @@
 	 * Event handler for when a book document loads
 	 */
 	function handleLoad({ detail }: CustomEvent<{ doc: Document }>) {
-		const { doc } = detail;
-		doc.addEventListener('keydown', handleKeydown);
+        const { doc } = detail;
+        currentDoc = doc;
+        doc.addEventListener('keydown', handleKeydown);
 	}
 
 	/**
@@ -203,9 +228,21 @@
 			: `Loc ${currentPage}${totalPages ? ` of ${totalPages}` : ''}`;
 		progressTitle = `${percent} · ${loc}`;
 
-		if (tocItem?.href) {
-			currentHref = tocItem.href;
-		}
+        if (tocItem?.href) {
+            currentHref = tocItem.href;
+        }
+
+        // Persist progress for this book
+        if (initialBook) {
+            // Save minimally on each relocate; storage util deduplicates unchanged state
+            void saveBookProgress(initialBook.id, {
+                page: currentPage || undefined,
+                totalPages: totalPages || undefined,
+                fraction: newFraction,
+                href: currentHref || undefined,
+                updatedAt: Date.now()
+            });
+        }
 	}
 
 	/**
@@ -221,19 +258,61 @@
 	}
 
     // Cleanup when component is destroyed
+    const teardownCallbacks: Array<() => void> = [];
+
     onDestroy(() => {
         try {
-            if (view) {
-                view.removeEventListener('load', handleLoad as EventListener);
-                view.removeEventListener('relocate', handleRelocate as EventListener);
-                view.remove();
-                view = null;
-            }
+            cleanupView();
         } catch {}
+        // Run any additional teardown callbacks
+        for (const cb of teardownCallbacks.splice(0)) {
+            try { cb(); } catch {}
+        }
         if (bookCover) {
             try { URL.revokeObjectURL(bookCover); } catch {}
         }
     });
+
+    /**
+     * Cleans up the foliate view and unloads the book sections to avoid renderer errors
+     */
+    function cleanupView() {
+        if (!view) return;
+        // Save last-known progress before tearing down
+        try {
+            if (initialBook) {
+                void saveBookProgress(initialBook.id, {
+                    page: currentPage || undefined,
+                    totalPages: totalPages || undefined,
+                    fraction: typeof fraction === 'number' ? fraction : undefined,
+                    href: currentHref || undefined,
+                    updatedAt: Date.now()
+                });
+            }
+        } catch {}
+        try {
+            view.removeEventListener('load', handleLoad as EventListener);
+        } catch {}
+        try {
+            view.removeEventListener('relocate', handleRelocate as EventListener);
+        } catch {}
+        try {
+            currentDoc?.removeEventListener('keydown', handleKeydown);
+            currentDoc = null;
+        } catch {}
+        try {
+            const sections = view.book?.sections;
+            if (sections && Array.isArray(sections)) {
+                for (const s of sections) {
+                    try { s.unload?.(); } catch {}
+                }
+            }
+        } catch {}
+        try {
+            view.remove();
+        } catch {}
+        view = null;
+    }
 
 	/**
 	 * Handles layout changes (paginated vs scrolled)
