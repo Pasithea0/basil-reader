@@ -47,8 +47,8 @@
 			>
 				<svg
 					class="h-6 w-6 fill-current transition-transform duration-200 {isExpanded
-						? ''
-						: '-rotate-90'}"
+						? 'rotate-90'
+						: ''}"
 					viewBox="0 0 24 24"
 				>
 					<path d="M 9 6 L 15 12 L 9 18" />
