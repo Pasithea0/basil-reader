@@ -20,6 +20,15 @@
 	let bookAuthor = $state('');
 	let bookCover = $state('');
 	let bookDir = $state<'ltr' | 'rtl'>('ltr');
+
+	// Expose bookTitle as a prop so parent can access it
+	let { onTitleChange = $bindable() } = $props<{ onTitleChange?: string }>();
+	$effect(() => {
+		// Only update title when a book is actually loaded (not the default placeholder)
+		if (bookTitle !== 'Untitled Book') {
+			onTitleChange = bookTitle;
+		}
+	});
 	
 	interface TOCItem {
 		label: string;

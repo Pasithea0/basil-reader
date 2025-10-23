@@ -1,9 +1,11 @@
 <script lang="ts">
 	import Reader from '$lib/components/reader/Reader.svelte';
+
+	let bookTitle = $state('Basil Reader');
 </script>
 
 <svelte:head>
-	<title>Basil Reader - E-Book Reader</title>
+	<title>{bookTitle}</title>
 </svelte:head>
 
-<Reader />
+<Reader bind:onTitleChange={bookTitle} />
