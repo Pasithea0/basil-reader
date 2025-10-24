@@ -4,8 +4,9 @@
  */
 
 const DB_NAME = 'basil-reader-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'books';
+const PROGRESS_STORE_NAME = 'progress';
 
 export interface StorageInfo {
 	used: number; // bytes used
@@ -28,6 +29,9 @@ export function openDB(): Promise<IDBDatabase> {
 			const db = (event.target as IDBOpenDBRequest).result;
 			if (!db.objectStoreNames.contains(STORE_NAME)) {
 				db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+			}
+			if (!db.objectStoreNames.contains(PROGRESS_STORE_NAME)) {
+				db.createObjectStore(PROGRESS_STORE_NAME, { keyPath: 'id' });
 			}
 		};
 	});
@@ -120,16 +124,51 @@ export async function deleteRecord(id: string): Promise<void> {
 export async function clearAllRecords(): Promise<void> {
 	try {
 		const db = await openDB();
-		const transaction = db.transaction(STORE_NAME, 'readwrite');
+		const transaction = db.transaction([STORE_NAME, PROGRESS_STORE_NAME], 'readwrite');
 		const store = transaction.objectStore(STORE_NAME);
+		const progressStore = transaction.objectStore(PROGRESS_STORE_NAME);
 
 		return new Promise((resolve, reject) => {
 			const request = store.clear();
-			request.onsuccess = () => resolve();
+			request.onsuccess = () => {
+				const r2 = progressStore.clear();
+				r2.onsuccess = () => resolve();
+				r2.onerror = () => reject(r2.error);
+			};
 			request.onerror = () => reject(request.error);
 		});
 	} catch (e) {
 		console.error('Failed to clear records:', e);
+	}
+}
+
+// Progress sub-store helpers
+export async function saveProgress<T extends { id: string }>(record: T): Promise<void> {
+	const db = await openDB();
+	const transaction = db.transaction(PROGRESS_STORE_NAME, 'readwrite');
+	const store = transaction.objectStore(PROGRESS_STORE_NAME);
+
+	return new Promise((resolve, reject) => {
+		const request = store.put(record);
+		request.onsuccess = () => resolve();
+		request.onerror = () => reject(request.error);
+	});
+}
+
+export async function getProgress<T>(id: string): Promise<T | null> {
+	try {
+		const db = await openDB();
+		const transaction = db.transaction(PROGRESS_STORE_NAME, 'readonly');
+		const store = transaction.objectStore(PROGRESS_STORE_NAME);
+
+		return new Promise((resolve, reject) => {
+			const request = store.get(id);
+			request.onsuccess = () => resolve((request.result as T) ?? null);
+			request.onerror = () => reject(request.error);
+		});
+	} catch (e) {
+		console.error('Failed to get progress:', e);
+		return null;
 	}
 }
 

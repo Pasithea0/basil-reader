@@ -74,8 +74,10 @@ export interface FoliateView extends HTMLElement {
 	goLeft(): void;
 	goRight(): void;
 	goToFraction(fraction: number): void;
+	goToTextStart(): Promise<void>;
 	getSectionFractions(): IterableIterator<number>;
 	addAnnotation(annotation: Annotation): void;
+	close(): void;
 	book: FoliateBook;
 	renderer: FoliateRenderer;
 	addEventListener(
@@ -110,6 +112,7 @@ export interface RelocateEvent extends CustomEvent {
 		range: Range;
 		index: number;
 		fraction: number;
+		cfi?: string;
 		location: {
 			current: number;
 			total: number;
@@ -130,11 +133,11 @@ export interface CreateOverlayEvent extends CustomEvent {
 }
 
 export interface CreateOverlayerEvent extends CustomEvent {
-    detail: {
-        doc: Document;
-        index: number;
-        attach: (overlay: { element: HTMLElement; redraw: () => void }) => void;
-    };
+	detail: {
+		doc: Document;
+		index: number;
+		attach: (overlay: { element: HTMLElement; redraw: () => void }) => void;
+	};
 }
 
 export interface DrawAnnotationEvent extends CustomEvent {

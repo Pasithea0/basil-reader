@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import HeaderBar from './HeaderBar.svelte';
 	import NavBar from './NavBar.svelte';
@@ -17,6 +17,7 @@
 		type TOCItem
 	} from '$lib/utils/bookLoader';
 	import type { FoliateView } from '$lib/types/foliate';
+	import { getBookProgress, saveBookProgress } from '$lib/utils/library';
 
 	interface Props {
 		onTitleChange?: string;
@@ -58,6 +59,7 @@
 	// Foliate view reference
 	let viewContainer: HTMLElement;
 	let view: FoliateView | null = null;
+	let currentDoc: Document | null = null;
 	let annotations = new SvelteMap<
 		number,
 		Array<{ value: string; color?: string; note?: string }>
@@ -79,10 +81,10 @@
 		}
 	});
 
-    // Initialize foliate-js view component (view.js is imported globally in +layout)
-    onMount(() => {
-        viewReady = true;
-    });
+	// Initialize foliate-js view component (view.js is imported globally in +layout)
+	onMount(() => {
+		viewReady = true;
+	});
 
 	// Watch for book changes and load them when ready
 	$effect(() => {
@@ -116,21 +118,14 @@
 	/**
 	 * Opens and initializes a book for reading
 	 */
-    async function openBook(file: File | FileSystemDirectoryHandle) {
+	async function openBook(file: File | FileSystemDirectoryHandle) {
 		console.log('Opening book:', file);
 
 		try {
-            // Clean up any existing view before creating a new one
-            if (view) {
-                try {
-                    view.removeEventListener('load', handleLoad as EventListener);
-                    view.removeEventListener('relocate', handleRelocate as EventListener);
-                } catch {}
-                try {
-                    view.remove();
-                } catch {}
-                view = null;
-            }
+			// Clean up any existing view before creating a new one
+			if (view) {
+				cleanupView();
+			}
 
 			// Create and initialize foliate view
 			view = await createFoliateView(viewContainer, file);
@@ -140,7 +135,7 @@
 			view.addEventListener('relocate', handleRelocate as EventListener);
 
 			// Set up error handling
-			setupErrorHandling(view);
+			const removeErrorHandler = setupErrorHandling(view);
 
 			// Extract metadata
 			const metadata = await extractBookMetadata(view);
@@ -149,21 +144,84 @@
 			bookDir = metadata.dir;
 			toc = metadata.toc || [];
 
-			// Set cover if available
+			// Set cover if available (revoke previous before replacing)
 			if (metadata.cover) {
+				if (bookCover) {
+					try {
+						URL.revokeObjectURL(bookCover);
+					} catch {
+						// silently catch error
+					}
+				}
 				bookCover = URL.createObjectURL(metadata.cover);
 			}
 
 			// Apply styles
 			view.renderer.setStyles?.(getCSS(style));
 			view.renderer.setAttribute('flow', selectedLayout);
-			view.renderer.next();
 
 			// Get section fractions for navigation
 			sectionFractions = Array.from(view.getSectionFractions());
 
+			// Restore last position or show text start
+			try {
+				let navigated = false;
+				if (initialBook) {
+					const progress = await getBookProgress(initialBook.id);
+					if (progress) {
+						try {
+							if (progress.cfi) {
+								await view.goTo(progress.cfi);
+								navigated = true;
+							} else if (progress.href) {
+								await view.goTo(progress.href);
+								navigated = true;
+							} else if (typeof progress.fraction === 'number') {
+								const f = Math.min(1, Math.max(0, progress.fraction));
+								view.goToFraction(f);
+								navigated = true;
+							} else if (
+								typeof progress.page === 'number' &&
+								typeof progress.totalPages === 'number' &&
+								progress.totalPages > 0
+							) {
+								const f = Math.min(1, Math.max(0, (progress.page - 1) / progress.totalPages));
+								view.goToFraction(f);
+								navigated = true;
+							}
+						} catch (e) {
+							console.error('Failed to restore reading position:', e);
+							navigated = false;
+						}
+					}
+				}
+				if (!navigated) {
+					if (view.goToTextStart) await view.goToTextStart();
+					else view.renderer.next?.();
+				}
+			} catch (e) {
+				console.error('Failed to initialize reader position:', e);
+			}
+
 			// Load Calibre bookmarks if available
-			await loadCalibreBookmarks(view, annotations, annotationsByValue);
+			const removeBookmarkHandlers = await loadCalibreBookmarks(
+				view,
+				annotations,
+				annotationsByValue
+			);
+			// Ensure these are removed on cleanup
+			teardownCallbacks.push(() => {
+				try {
+					removeErrorHandler();
+				} catch {
+					// silently catch error
+				}
+				try {
+					removeBookmarkHandlers();
+				} catch {
+					// silently catch error
+				}
+			});
 		} catch (e) {
 			console.error('Failed to open book:', e);
 			throw e;
@@ -175,21 +233,26 @@
 	 */
 	function handleLoad({ detail }: CustomEvent<{ doc: Document }>) {
 		const { doc } = detail;
+		currentDoc = doc;
 		doc.addEventListener('keydown', handleKeydown);
 	}
 
 	/**
 	 * Event handler for navigation/location changes
 	 */
-    function handleRelocate({
+	function handleRelocate({
 		detail
 	}: CustomEvent<{
+		range: Range;
 		fraction: number;
-        location: { current: number; total?: number };
+		location: { current: number; total?: number };
 		tocItem?: { href?: string };
 		pageItem?: { label: string };
+		cfi?: string;
 	}>) {
-		const { fraction: newFraction, location, tocItem, pageItem } = detail;
+		// Range is not used yet, but we can keep it for future use. TODO
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { range, cfi, fraction: newFraction, location, tocItem, pageItem } = detail;
 
 		// Update fraction - this will update the slider position
 		fraction = newFraction;
@@ -206,6 +269,19 @@
 		if (tocItem?.href) {
 			currentHref = tocItem.href;
 		}
+
+		// Persist progress for this book
+		if (initialBook) {
+			// Save minimally on each relocate; storage util deduplicates unchanged state
+			void saveBookProgress(initialBook.id, {
+				page: currentPage || undefined,
+				totalPages: totalPages || undefined,
+				fraction: newFraction,
+				href: currentHref || undefined,
+				cfi,
+				updatedAt: Date.now()
+			});
+		}
 	}
 
 	/**
@@ -220,20 +296,79 @@
 		}
 	}
 
-    // Cleanup when component is destroyed
-    onDestroy(() => {
-        try {
-            if (view) {
-                view.removeEventListener('load', handleLoad as EventListener);
-                view.removeEventListener('relocate', handleRelocate as EventListener);
-                view.remove();
-                view = null;
-            }
-        } catch {}
-        if (bookCover) {
-            try { URL.revokeObjectURL(bookCover); } catch {}
-        }
-    });
+	// Cleanup when component is destroyed
+	const teardownCallbacks: Array<() => void> = [];
+
+	onDestroy(() => {
+		try {
+			cleanupView();
+		} catch {
+			// silently catch error
+		}
+		// Run any additional teardown callbacks
+		for (const cb of teardownCallbacks.splice(0)) {
+			try {
+				cb();
+			} catch {
+				// silently catch error
+			}
+		}
+		if (bookCover) {
+			try {
+				URL.revokeObjectURL(bookCover);
+			} catch {
+				// silently catch error
+			}
+		}
+	});
+
+	/**
+	 * Cleans up the foliate view and unloads the book sections to avoid renderer errors
+	 */
+	function cleanupView() {
+		if (!view) return;
+		// Save last-known progress before tearing down
+		try {
+			if (initialBook) {
+				void saveBookProgress(initialBook.id, {
+					page: currentPage || undefined,
+					totalPages: totalPages || undefined,
+					fraction: typeof fraction === 'number' ? fraction : undefined,
+					href: currentHref || undefined,
+					updatedAt: Date.now()
+				});
+			}
+		} catch {
+			// silently catch error
+		}
+		try {
+			view.removeEventListener('load', handleLoad as EventListener);
+		} catch {
+			// silently catch error
+		}
+		try {
+			view.removeEventListener('relocate', handleRelocate as EventListener);
+		} catch {
+			// silently catch error
+		}
+		try {
+			currentDoc?.removeEventListener('keydown', handleKeydown);
+			currentDoc = null;
+		} catch {
+			// silently catch error
+		}
+		try {
+			view.close?.();
+		} catch {
+			// silently catch error
+		}
+		try {
+			view.remove();
+		} catch {
+			// silently catch error
+		}
+		view = null;
+	}
 
 	/**
 	 * Handles layout changes (paginated vs scrolled)

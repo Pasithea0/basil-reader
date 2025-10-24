@@ -11,7 +11,9 @@ import {
 	clearAllRecords,
 	getStorageInfo as getStorageInfoFromStorage,
 	formatBytes as formatBytesFromStorage,
-	generateId
+	generateId,
+	saveProgress,
+	getProgress
 } from './storage';
 import type { StorageInfo } from './storage';
 
@@ -24,6 +26,15 @@ export interface StoredBook {
 	fileType: string;
 	fileSize: number;
 	addedAt: number;
+}
+
+export interface BookProgress {
+	page?: number;
+	totalPages?: number;
+	fraction?: number; // 0..1 across the whole book
+	href?: string; // last TOC href if available
+	cfi?: string; // EPUB CFI location if available
+	updatedAt: number;
 }
 
 interface StoredBookData {
@@ -140,6 +151,32 @@ export async function getBookById(bookId: string): Promise<File | null> {
 	}
 
 	return null;
+}
+
+/**
+ * Persists reading progress for a given book
+ */
+export async function saveBookProgress(bookId: string, progress: BookProgress): Promise<void> {
+	const prev = await getProgress<BookProgress & { id: string }>(bookId);
+	const changed =
+		!prev ||
+		prev.page !== progress.page ||
+		prev.totalPages !== progress.totalPages ||
+		prev.href !== progress.href ||
+		prev.cfi !== progress.cfi ||
+		(typeof progress.fraction === 'number' && progress.fraction !== prev.fraction);
+	if (!changed && prev && progress.updatedAt <= prev.updatedAt) return;
+	await saveProgress({ id: bookId, ...progress });
+}
+
+/**
+ * Returns persisted reading progress for a given book, if any
+ */
+export async function getBookProgress(bookId: string): Promise<BookProgress | null> {
+	const progress = await getProgress<BookProgress & { id: string }>(bookId);
+	if (!progress) return null;
+	const { updatedAt, page, totalPages, fraction, href, cfi } = progress;
+	return { updatedAt, page, totalPages, fraction, href, cfi };
 }
 
 /**

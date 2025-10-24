@@ -76,17 +76,34 @@ export async function extractBookMetadata(view: FoliateView): Promise<BookMetada
 /**
  * Sets up error handling for book transforms
  */
-export function setupErrorHandling(view: FoliateView): void {
+export function setupErrorHandling(view: FoliateView): () => void {
 	const { book } = view;
-
-	book.transformTarget?.addEventListener('data', (({
+	// Only log transform errors, do not mutate payload to avoid breaking renderer
+	const handler = (({
 		detail
-	}: CustomEvent<{ data: Promise<unknown>; name: string }>) => {
-		detail.data = Promise.resolve(detail.data).catch((e: Error) => {
-			console.error(new Error(`Failed to load ${detail.name}`, { cause: e }));
-			return '';
-		});
-	}) as EventListener);
+	}: CustomEvent<{ data: Promise<unknown> | unknown; name: string }>) => {
+		if (
+			detail &&
+			detail.data &&
+			typeof detail.data === 'object' &&
+			detail.data !== null &&
+			'then' in detail.data
+		) {
+			(detail.data as Promise<unknown>).catch((e: Error) => {
+				console.error(new Error(`Failed to load ${detail.name}`, { cause: e }));
+			});
+		}
+	}) as EventListener;
+
+	book.transformTarget?.addEventListener('data', handler);
+
+	return () => {
+		try {
+			book.transformTarget?.removeEventListener('data', handler);
+		} catch {
+			// silently catch error
+		}
+	};
 }
 
 /**
@@ -125,12 +142,12 @@ export async function loadCalibreBookmarks(
 	view: FoliateView,
 	annotations: Map<number, Array<{ value: string; color?: string; note?: string }>>,
 	annotationsByValue: Map<string, { value: string; color?: string; note?: string }>
-): Promise<void> {
+): Promise<() => void> {
 	try {
 		const { book } = view;
 		const bookmarks = await book.getCalibreBookmarks?.();
 
-		if (!bookmarks) return;
+		if (!bookmarks) return () => {};
 
 		const { fromCalibreHighlight } = await import('$lib/foliate-js/epubcfi.js');
 		const { Overlayer } = await import('$lib/foliate-js/overlayer.js');
@@ -149,8 +166,8 @@ export async function loadCalibreBookmarks(
 			}
 		}
 
-		// Set up annotation event listeners
-    view.addEventListener('create-overlayer', ((e: CustomEvent<{ index: number }>) => {
+		// Set up annotation event listeners and keep references for cleanup
+		const handleCreateOverlayer = ((e: CustomEvent<{ index: number }>) => {
 			const { index } = e.detail;
 			const list = annotations.get(index);
 			if (list) {
@@ -158,9 +175,9 @@ export async function loadCalibreBookmarks(
 					view.addAnnotation(annotation);
 				}
 			}
-		}) as EventListener);
+		}) as EventListener;
 
-		view.addEventListener('draw-annotation', ((
+		const handleDrawAnnotation = ((
 			e: CustomEvent<{
 				draw: (fn: (range: Range) => SVGElement, options: Record<string, unknown>) => void;
 				annotation: { color?: string };
@@ -169,13 +186,36 @@ export async function loadCalibreBookmarks(
 			const { draw, annotation } = e.detail;
 			const { color } = annotation;
 			draw(Overlayer.highlight, { color });
-		}) as EventListener);
+		}) as EventListener;
 
-		view.addEventListener('show-annotation', ((e: CustomEvent<{ value: string }>) => {
+		const handleShowAnnotation = ((e: CustomEvent<{ value: string }>) => {
 			const annotation = annotationsByValue.get(e.detail.value);
 			if (annotation?.note) alert(annotation.note);
-		}) as EventListener);
+		}) as EventListener;
+
+		view.addEventListener('create-overlayer', handleCreateOverlayer);
+		view.addEventListener('draw-annotation', handleDrawAnnotation);
+		view.addEventListener('show-annotation', handleShowAnnotation);
+
+		return () => {
+			try {
+				view.removeEventListener('create-overlayer', handleCreateOverlayer);
+			} catch {
+				// silently catch error
+			}
+			try {
+				view.removeEventListener('draw-annotation', handleDrawAnnotation);
+			} catch {
+				// silently catch error
+			}
+			try {
+				view.removeEventListener('show-annotation', handleShowAnnotation);
+			} catch {
+				// silently catch error
+			}
+		};
 	} catch (e) {
 		console.error('Failed to load bookmarks:', e);
+		return () => {};
 	}
 }
