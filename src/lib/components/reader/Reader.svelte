@@ -159,30 +159,40 @@ import { getBookById, type StoredBook } from '$lib/utils/library';
             // Get section fractions for navigation
             sectionFractions = Array.from(view.getSectionFractions());
 
-            // Attempt to restore previous reading position
-            if (initialBook) {
-                try {
+            // Restore last position or show text start
+            try {
+                let navigated = false;
+                if (initialBook) {
                     const progress = await getBookProgress(initialBook.id);
                     if (progress) {
-                        if (progress.cfi) {
-                            await view.goTo(progress.cfi).catch((e: Error) => console.error(e));
-                        } else if (progress.href) {
-                            await view.goTo(progress.href).catch((e: Error) => console.error(e));
-                        } else if (typeof progress.fraction === 'number') {
-                            const f = Math.min(1, Math.max(0, progress.fraction));
-                            view.goToFraction(f);
-                        } else if (
-                            typeof progress.page === 'number' &&
-                            typeof progress.totalPages === 'number' &&
-                            progress.totalPages > 0
-                        ) {
-                            const f = Math.min(1, Math.max(0, (progress.page - 1) / progress.totalPages));
-                            view.goToFraction(f);
+                        try {
+                            if (progress.cfi) {
+                                await view.goTo(progress.cfi);
+                                navigated = true;
+                            } else if (progress.href) {
+                                await view.goTo(progress.href);
+                                navigated = true;
+                            } else if (typeof progress.fraction === 'number') {
+                                const f = Math.min(1, Math.max(0, progress.fraction));
+                                view.goToFraction(f);
+                                navigated = true;
+                            } else if (typeof progress.page === 'number' && typeof progress.totalPages === 'number' && progress.totalPages > 0) {
+                                const f = Math.min(1, Math.max(0, (progress.page - 1) / progress.totalPages));
+                                view.goToFraction(f);
+                                navigated = true;
+                            }
+                        } catch (e) {
+                            console.error('Failed to restore reading position:', e);
+                            navigated = false;
                         }
                     }
-                } catch (e) {
-                    console.error('Failed to restore reading position:', e);
                 }
+                if (!navigated) {
+                    if ((view as any).goToTextStart) await (view as any).goToTextStart();
+                    else view.renderer.next?.();
+                }
+            } catch (e) {
+                console.error('Failed to initialize reader position:', e);
             }
 
 			// Load Calibre bookmarks if available
