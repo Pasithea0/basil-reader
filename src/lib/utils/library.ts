@@ -34,6 +34,13 @@ export interface BookProgress {
 	fraction?: number; // 0..1 across the whole book
 	href?: string; // last TOC href if available
 	cfi?: string; // EPUB CFI location if available
+	pageLabel?: string; // Exact page label from pageItem (e.g., "12", "i", "xii")
+	location?: {
+		current: number;
+		total: number;
+	}; // Location numbers from foliate-js
+	sectionIndex?: number; // Current section/chapter index
+	sectionFraction?: number; // Fraction within current section (0..1)
 	updatedAt: number;
 }
 
@@ -164,9 +171,16 @@ export async function saveBookProgress(bookId: string, progress: BookProgress): 
 		prev.totalPages !== progress.totalPages ||
 		prev.href !== progress.href ||
 		prev.cfi !== progress.cfi ||
+		prev.pageLabel !== progress.pageLabel ||
+		prev.location?.current !== progress.location?.current ||
+		prev.location?.total !== progress.location?.total ||
+		prev.sectionIndex !== progress.sectionIndex ||
+		prev.sectionFraction !== progress.sectionFraction ||
 		(typeof progress.fraction === 'number' && progress.fraction !== prev.fraction);
 	if (!changed && prev && progress.updatedAt <= prev.updatedAt) return;
-	await saveProgress({ id: bookId, ...progress });
+	const dataToSave = { id: bookId, ...progress };
+	console.log('💿 Writing to IndexedDB:', dataToSave);
+	await saveProgress(dataToSave);
 }
 
 /**
@@ -175,8 +189,33 @@ export async function saveBookProgress(bookId: string, progress: BookProgress): 
 export async function getBookProgress(bookId: string): Promise<BookProgress | null> {
 	const progress = await getProgress<BookProgress & { id: string }>(bookId);
 	if (!progress) return null;
-	const { updatedAt, page, totalPages, fraction, href, cfi } = progress;
-	return { updatedAt, page, totalPages, fraction, href, cfi };
+	console.log('📖 Raw progress from IndexedDB:', progress);
+	const {
+		updatedAt,
+		page,
+		totalPages,
+		fraction,
+		href,
+		cfi,
+		pageLabel,
+		location,
+		sectionIndex,
+		sectionFraction
+	} = progress;
+	const result = {
+		updatedAt,
+		page,
+		totalPages,
+		fraction,
+		href,
+		cfi,
+		pageLabel,
+		location,
+		sectionIndex,
+		sectionFraction
+	};
+	console.log('📖 Returning progress:', result);
+	return result;
 }
 
 /**

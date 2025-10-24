@@ -6,6 +6,8 @@
 		dir?: 'ltr' | 'rtl' | 'auto';
 		title?: string;
 		sectionFractions?: number[];
+		currentPage?: number;
+		totalPages?: number;
 		ongoLeft?: () => void;
 		ongoRight?: () => void;
 		onseek?: (event: CustomEvent<{ fraction: number }>) => void;
@@ -18,6 +20,8 @@
 		dir = 'ltr',
 		title = '',
 		sectionFractions = [],
+		currentPage = 0,
+		totalPages = 0,
 		ongoLeft,
 		ongoRight,
 		onseek,
@@ -82,6 +86,11 @@
 				<option value={frac}></option>
 			{/each}
 		</datalist>
+		{#if totalPages > 0}
+			<div class="min-w-16 shrink-0 text-center text-xs text-gray-600 dark:text-gray-400">
+				{currentPage}/{totalPages}
+			</div>
+		{/if}
 		<button
 			id="right-button"
 			aria-label="Go right"

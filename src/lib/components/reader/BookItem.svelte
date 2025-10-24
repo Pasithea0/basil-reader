@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { BookOpen, X } from 'lucide-svelte';
 	import type { StoredBook } from '$lib/utils/library';
-	import { formatBytes } from '$lib/utils/library';
+	import { formatBytes, getBookProgress } from '$lib/utils/library';
+	import { onMount } from 'svelte';
 
 	interface Props {
 		book: StoredBook;
@@ -10,6 +11,21 @@
 	}
 
 	let { book, onclick, onremove }: Props = $props();
+
+	let progressText = $state<string>('');
+
+	onMount(async () => {
+		const progress = await getBookProgress(book.id);
+		if (progress) {
+			const percent = Math.round((progress.fraction || 0) * 100);
+			const page = progress.location?.current || progress.page;
+			if (page && percent > 0) {
+				progressText = `pg ${page} · ${percent}%`;
+			} else if (percent > 0) {
+				progressText = `${percent}%`;
+			}
+		}
+	});
 
 	let showRemoveButton = $state(false);
 </script>
@@ -37,7 +53,12 @@
 		{#if book.author}
 			<p class="line-clamp-1 text-xs text-gray-600 dark:text-gray-400">{book.author}</p>
 		{/if}
-		<p class="text-xs text-gray-500 dark:text-gray-500">{formatBytes(book.fileSize)}</p>
+		<div class="flex items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-500">
+			<span>{formatBytes(book.fileSize)}</span>
+			{#if progressText}
+				<span class="">{progressText}</span>
+			{/if}
+		</div>
 	</button>
 
 	{#if showRemoveButton && onremove}

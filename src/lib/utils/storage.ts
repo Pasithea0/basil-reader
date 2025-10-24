@@ -150,8 +150,14 @@ export async function saveProgress<T extends { id: string }>(record: T): Promise
 
 	return new Promise((resolve, reject) => {
 		const request = store.put(record);
-		request.onsuccess = () => resolve();
-		request.onerror = () => reject(request.error);
+		request.onsuccess = () => {
+			// console.log('IndexedDB write successful for:', record.id);
+			resolve();
+		};
+		request.onerror = () => {
+			console.error('IndexedDB write failed:', request.error);
+			reject(request.error);
+		};
 	});
 }
 
@@ -163,8 +169,15 @@ export async function getProgress<T>(id: string): Promise<T | null> {
 
 		return new Promise((resolve, reject) => {
 			const request = store.get(id);
-			request.onsuccess = () => resolve((request.result as T) ?? null);
-			request.onerror = () => reject(request.error);
+			request.onsuccess = () => {
+				const result = (request.result as T) ?? null;
+				// console.log('IndexedDB read successful for:', id, '- Data:', result);
+				resolve(result);
+			};
+			request.onerror = () => {
+				console.error('IndexedDB read failed:', request.error);
+				reject(request.error);
+			};
 		});
 	} catch (e) {
 		console.error('Failed to get progress:', e);
