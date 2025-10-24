@@ -76,6 +76,7 @@ export interface FoliateView extends HTMLElement {
 	goToFraction(fraction: number): void;
 	getSectionFractions(): IterableIterator<number>;
 	addAnnotation(annotation: Annotation): void;
+    close(): void;
 	book: FoliateBook;
 	renderer: FoliateRenderer;
 	addEventListener(
@@ -110,6 +111,7 @@ export interface RelocateEvent extends CustomEvent {
 		range: Range;
 		index: number;
 		fraction: number;
+        cfi?: string;
 		location: {
 			current: number;
 			total: number;

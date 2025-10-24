@@ -18,7 +18,6 @@ import { getBookById, type StoredBook } from '$lib/utils/library';
 	} from '$lib/utils/bookLoader';
     import type { FoliateView } from '$lib/types/foliate';
     import { getBookProgress, saveBookProgress } from '$lib/utils/library';
-    import { toEPUBCFI } from '$lib/foliate-js/epubcfi.js';
 
 	interface Props {
 		onTitleChange?: string;
@@ -219,8 +218,9 @@ import { getBookById, type StoredBook } from '$lib/utils/library';
 		location: { current: number; total?: number };
 		tocItem?: { href?: string };
 		pageItem?: { label: string };
+        cfi?: string;
 	}>) {
-		const { range, fraction: newFraction, location, tocItem, pageItem } = detail;
+        const { range, cfi, fraction: newFraction, location, tocItem, pageItem } = detail;
 
 		// Update fraction - this will update the slider position
 		fraction = newFraction;
@@ -241,16 +241,12 @@ import { getBookById, type StoredBook } from '$lib/utils/library';
 		// Persist progress for this book
         if (initialBook) {
             // Save minimally on each relocate; storage util deduplicates unchanged state
-			let cfi: string | undefined = undefined;
-			try {
-				cfi = toEPUBCFI(range);
-			} catch {}
-			void saveBookProgress(initialBook.id, {
+            void saveBookProgress(initialBook.id, {
                 page: currentPage || undefined,
                 totalPages: totalPages || undefined,
                 fraction: newFraction,
                 href: currentHref || undefined,
-				cfi,
+                cfi,
                 updatedAt: Date.now()
             });
         }
@@ -311,7 +307,9 @@ import { getBookById, type StoredBook } from '$lib/utils/library';
             currentDoc?.removeEventListener('keydown', handleKeydown);
             currentDoc = null;
         } catch {}
-        // Do not manually call section unload here; foliate handles lifecycle after removal
+        try {
+            view.close?.();
+        } catch {}
         try {
             view.remove();
         } catch {}

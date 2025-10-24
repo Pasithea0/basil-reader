@@ -11,7 +11,9 @@ import {
     clearAllRecords,
     getStorageInfo as getStorageInfoFromStorage,
     formatBytes as formatBytesFromStorage,
-    generateId
+    generateId,
+    saveProgress,
+    getProgress
 } from './storage';
 import type { StorageInfo } from './storage';
 
@@ -45,8 +47,6 @@ interface StoredBookData {
 	fileType: string;
 	fileSize: number;
 	addedAt: number;
-    // optional persisted reading progress
-    progress?: BookProgress;
 }
 
 /**
@@ -157,10 +157,7 @@ export async function getBookById(bookId: string): Promise<File | null> {
  * Persists reading progress for a given book
  */
 export async function saveBookProgress(bookId: string, progress: BookProgress): Promise<void> {
-    const record = await getRecord<StoredBookData>(bookId);
-    if (!record) return;
-    // Only update if something changed or it's newer
-    const prev = record.progress;
+    const prev = await getProgress<BookProgress & { id: string }>(bookId);
     const changed =
         !prev ||
         prev.page !== progress.page ||
@@ -169,16 +166,17 @@ export async function saveBookProgress(bookId: string, progress: BookProgress): 
         prev.cfi !== progress.cfi ||
         (typeof progress.fraction === 'number' && progress.fraction !== prev.fraction);
     if (!changed && prev && progress.updatedAt <= prev.updatedAt) return;
-    record.progress = progress;
-    await saveRecord(record);
+    await saveProgress({ id: bookId, ...progress });
 }
 
 /**
  * Returns persisted reading progress for a given book, if any
  */
 export async function getBookProgress(bookId: string): Promise<BookProgress | null> {
-    const record = await getRecord<StoredBookData>(bookId);
-    return record?.progress ?? null;
+    const progress = await getProgress<BookProgress & { id: string }>(bookId);
+    if (!progress) return null;
+    const { updatedAt, page, totalPages, fraction, href, cfi } = progress;
+    return { updatedAt, page, totalPages, fraction, href, cfi };
 }
 
 /**
