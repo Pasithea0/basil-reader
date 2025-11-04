@@ -33,6 +33,13 @@
 	let showHeader = $state(false);
 	let showNavBar = $state(false);
 
+	// Auto-hide header in scrolled mode
+	$effect(() => {
+		if (selectedLayout === 'scrolled') {
+			showHeader = false;
+		}
+	});
+
 	// Book metadata
 	let bookTitle = $state('Untitled Book');
 	let bookAuthor = $state('');
@@ -402,6 +409,20 @@
 	}
 
 	/**
+	 * Show header (for scrolled mode)
+	 */
+	function showHeaderBar() {
+		showHeader = true;
+	}
+
+	/**
+	 * Hide header (for scrolled mode)
+	 */
+	function hideHeaderBar() {
+		showHeader = false;
+	}
+
+	/**
 	 * Toggle navbar visibility
 	 */
 	function toggleNavBarVisibility() {
@@ -427,6 +448,8 @@
 		{onback}
 		isVisible={showHeader}
 		ontoggleVisibility={toggleHeaderVisibility}
+		onshowHeader={showHeaderBar}
+		onhideHeader={hideHeaderBar}
 		oncloseAll={closeAllUI}
 	></HeaderBar>
 
