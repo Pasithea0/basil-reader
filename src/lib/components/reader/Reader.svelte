@@ -169,63 +169,18 @@
 				if (initialBook) {
 					const progress = await getBookProgress(initialBook.id);
 					if (progress) {
-						// Debug logging to verify what progress data we have
-						console.log('Restoring progress:', {
-							cfi: progress.cfi,
-							href: progress.href,
-							pageLabel: progress.pageLabel,
-							location: progress.location,
-							fraction: progress.fraction,
-							page: progress.page
-						});
+						console.log('Restoring progress:', progress);
 						try {
-							// Try most precise navigation methods first
-							// CFI (Canonical Fragment Identifier) is the serialized Range and provides
-							// the most accurate position restoration, down to the exact visible text range
-							if (progress.cfi) {
-								console.log('Using CFI for navigation:', progress.cfi);
-								await view.goTo(progress.cfi);
-								navigated = true;
-							} else if (progress.location && progress.location.total > 0) {
-								// Use location-based navigation (more precise than just fraction)
-								console.log('Using location for navigation:', progress.location);
-								const targetFraction = Math.min(
-									1,
-									Math.max(0, (progress.location.current - 1) / progress.location.total)
-								);
-								view.goToFraction(targetFraction);
+							// Use fraction-based navigation as the primary method
+							if (typeof progress.fraction === 'number') {
+								const f = Math.min(1, Math.max(0, progress.fraction));
+								console.log('Using fraction for navigation:', f);
+								view.goToFraction(f);
 								navigated = true;
 							} else if (progress.href) {
+								// Simple fallback to href if no fraction available
 								console.log('Using href for navigation:', progress.href);
 								await view.goTo(progress.href);
-								navigated = true;
-							} else if (progress.pageLabel && progress.location) {
-								// Try to navigate to exact page using page label and location
-								// This is more precise than fraction-based navigation
-								const targetFraction =
-									progress.location.total > 0
-										? Math.min(
-												1,
-												Math.max(0, (progress.location.current - 1) / progress.location.total)
-											)
-										: progress.fraction;
-								if (typeof targetFraction === 'number') {
-									view.goToFraction(targetFraction);
-									navigated = true;
-								}
-							} else if (typeof progress.fraction === 'number') {
-								// Fall back to fraction-based navigation
-								const f = Math.min(1, Math.max(0, progress.fraction));
-								view.goToFraction(f);
-								navigated = true;
-							} else if (
-								typeof progress.page === 'number' &&
-								typeof progress.totalPages === 'number' &&
-								progress.totalPages > 0
-							) {
-								// Legacy page-based navigation
-								const f = Math.min(1, Math.max(0, (progress.page - 1) / progress.totalPages));
-								view.goToFraction(f);
 								navigated = true;
 							}
 						} catch (e) {
@@ -288,8 +243,8 @@
 		tocItem?: { href?: string };
 		pageItem?: { label: string };
 		cfi?: string;
-		index?: number; // Section index
-		size?: number; // Section fraction
+		index?: number;
+		size?: number;
 	}>) {
 		// Extract location data from relocate event
 		// Note: 'range' is the live DOM Range object representing the visible text area.
@@ -301,13 +256,6 @@
 		// The 'cfi' field is the serialized version of this range for storage.
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { range, cfi, fraction: newFraction, location, tocItem, pageItem, index, size } = detail;
-
-		// Optional: Debug logging to see what text is currently visible
-		// Uncomment to see the range in action:
-		// if (range) {
-		// 	const visibleText = range.toString().substring(0, 100);
-		// 	console.log('Visible text:', visibleText, 'CFI:', cfi);
-		// }
 
 		// Update fraction - this will update the slider position
 		fraction = newFraction;
@@ -325,29 +273,11 @@
 			currentHref = tocItem.href;
 		}
 
-		// Persist enhanced progress for this book
+		// Persist progress for this book
 		if (initialBook) {
-			// Save detailed progress information; storage util deduplicates unchanged state
-			// Note: The 'cfi' field contains the serialized Range position, which is the most
-			// precise way to restore the exact reading position. The CFI (Canonical Fragment
-			// Identifier) is generated from the Range object by foliate-js and represents the
-			// exact visible text range in the document.
 			const progressData = {
-				page: currentPage || undefined,
-				totalPages: totalPages || undefined,
 				fraction: newFraction,
 				href: currentHref || undefined,
-				cfi, // This is the serialized Range - most precise position tracking
-				// Enhanced location tracking for additional fallback options
-				pageLabel: pageItem?.label,
-				location: location
-					? {
-							current: location.current,
-							total: location.total || 0
-						}
-					: undefined,
-				sectionIndex: index,
-				sectionFraction: size, // This represents fraction within the current section
 				updatedAt: Date.now()
 			};
 			console.log('Saving progress:', progressData);
@@ -402,18 +332,8 @@
 		try {
 			if (initialBook) {
 				void saveBookProgress(initialBook.id, {
-					page: currentPage || undefined,
-					totalPages: totalPages || undefined,
 					fraction: typeof fraction === 'number' ? fraction : undefined,
 					href: currentHref || undefined,
-					// Save current state for enhanced tracking
-					location:
-						totalPages > 0
-							? {
-									current: currentPage || 0,
-									total: totalPages
-								}
-							: undefined,
 					updatedAt: Date.now()
 				});
 			}
@@ -539,16 +459,3 @@
 
 	<div class="h-full w-full" bind:this={viewContainer}></div>
 </div>
-
-<!-- <style>
-	:global(.reader-container) {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100vw;
-		height: 100vh;
-		overflow: hidden;
-		touch-action: none;
-		-webkit-overflow-scrolling: touch;
-	}
-</style> -->
