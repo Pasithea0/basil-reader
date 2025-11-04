@@ -179,7 +179,7 @@ export async function saveBookProgress(bookId: string, progress: BookProgress): 
 		(typeof progress.fraction === 'number' && progress.fraction !== prev.fraction);
 	if (!changed && prev && progress.updatedAt <= prev.updatedAt) return;
 	const dataToSave = { id: bookId, ...progress };
-	console.log('💿 Writing to IndexedDB:', dataToSave);
+	console.log('Writing to IndexedDB:', dataToSave);
 	await saveProgress(dataToSave);
 }
 
@@ -189,7 +189,7 @@ export async function saveBookProgress(bookId: string, progress: BookProgress): 
 export async function getBookProgress(bookId: string): Promise<BookProgress | null> {
 	const progress = await getProgress<BookProgress & { id: string }>(bookId);
 	if (!progress) return null;
-	console.log('📖 Raw progress from IndexedDB:', progress);
+	console.log('Raw progress from IndexedDB:', progress);
 	const {
 		updatedAt,
 		page,
@@ -214,7 +214,7 @@ export async function getBookProgress(bookId: string): Promise<BookProgress | nu
 		sectionIndex,
 		sectionFraction
 	};
-	console.log('📖 Returning progress:', result);
+	console.log('Returning progress:', result);
 	return result;
 }
 
